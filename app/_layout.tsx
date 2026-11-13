@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text } from 'react-native';
-import { router, Stack, useSegments } from 'expo-router';
+import { Stack, useSegments, router } from 'expo-router';
 import type { Session } from '@supabase/supabase-js';
+import {
+  useFonts as useJakartaFonts,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  useFonts as useInterFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 
 import BrandedSplash from '../src/components/BrandedSplash';
 import { getSession, onAuthStateChange } from '../src/lib/supabase';
 import { hasCompletedOnboarding, isGuest } from '../src/lib/session';
-import { COLORS, SERIF } from '../src/lib/theme';
+import { COLORS, FONTS } from '../src/lib/theme';
 
 const AUTH_ROUTES = ['login', 'register', 'forgot-password'];
 
@@ -15,6 +26,11 @@ export default function Layout() {
   const [session, setSession] = useState<Session | null>(null);
   const [tick, setTick] = useState(0);
   const segments = useSegments();
+
+  // Load the Stitch fonts. The app never blocks on them: if they fail to
+  // load, React Native falls back to the system fonts.
+  useJakartaFonts({ PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold });
+  useInterFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
 
   // Boot: load the session, then show the branded splash briefly.
   useEffect(() => {
@@ -61,31 +77,22 @@ export default function Layout() {
   return (
     <Stack
       screenOptions={{
+        headerShown: false,
         headerStyle: { backgroundColor: COLORS.maroon },
         headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '700', fontFamily: SERIF },
+        headerTitleStyle: { fontWeight: '700', fontFamily: FONTS.headline },
         contentStyle: { backgroundColor: COLORS.bg },
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{
-          title: 'ScanRisk',
-          headerRight: () => (
-            <Pressable onPress={() => router.push('/profile')}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Profile</Text>
-            </Pressable>
-          ),
-        }}
-      />
-      <Stack.Screen name="scan" options={{ title: 'Scan barcode' }} />
-      <Stack.Screen name="result" options={{ title: 'Product' }} />
-      <Stack.Screen name="history" options={{ title: 'Scan history' }} />
-      <Stack.Screen name="profile" options={{ title: 'Profile & Settings' }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="register" options={{ headerShown: false }} />
-      <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="scan" />
+      <Stack.Screen name="result" />
+      <Stack.Screen name="history" />
+      <Stack.Screen name="profile" />
+      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="login" />
+      <Stack.Screen name="register" />
+      <Stack.Screen name="forgot-password" />
     </Stack>
   );
 }

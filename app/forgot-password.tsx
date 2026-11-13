@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase';
-import { COLORS } from '../src/lib/theme';
+import { COLORS, FONTS } from '../src/lib/theme';
 import { Card, PrimaryButton, TextButton } from '../src/components/ui';
 import { AuthShell } from '../src/components/AuthShell';
 import { SetupNotice } from '../src/components/SetupNotice';
@@ -16,9 +17,11 @@ export default function ForgotPassword() {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const valid = EMAIL_RE.test(email.trim());
+
   const submit = async () => {
     setError('');
-    if (!EMAIL_RE.test(email.trim())) {
+    if (!valid) {
       setError('Enter a valid email address.');
       return;
     }
@@ -51,26 +54,32 @@ export default function ForgotPassword() {
   }
 
   return (
-    <AuthShell title="Forgot password?" sub="Enter your email and we will send you a reset link.">
+    <AuthShell title="Reset Password" sub="Enter the email associated with your ScanRisk account and we will send a secure link to reset your password.">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
 
       <Card>
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholderTextColor={COLORS.placeholder}
-          onSubmitEditing={submit}
-        />
+        <Text style={styles.label}>Registered Account Email</Text>
+        <View style={styles.emailRow}>
+          <TextInput
+            style={styles.emailInput}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholderTextColor={COLORS.placeholder}
+            onSubmitEditing={submit}
+          />
+          {valid ? (
+            <MaterialIcons name="check-circle" size={22} color={COLORS.green} />
+          ) : null}
+        </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <View style={styles.buttonWrap}>
           <PrimaryButton
-            label={busy ? 'Sending…' : 'Send reset link'}
+            label={busy ? 'Sending…' : 'Send Reset Link'}
+            icon="arrow-forward"
             onPress={submit}
             disabled={busy}
           />
@@ -85,18 +94,19 @@ export default function ForgotPassword() {
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 14, fontWeight: '700', marginTop: 12 },
-  input: {
+  label: { fontSize: 14, fontWeight: '700', marginTop: 12, fontFamily: FONTS.bodySemi, color: COLORS.ink },
+  emailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.white,
     borderColor: COLORS.line,
     borderRadius: 12,
     borderWidth: 1,
-    fontSize: 16,
     marginTop: 6,
     paddingHorizontal: 12,
-    paddingVertical: 12,
   },
-  error: { color: COLORS.danger, fontSize: 13, marginTop: 10 },
+  emailInput: { flex: 1, fontSize: 16, paddingVertical: 12, fontFamily: FONTS.body },
+  error: { color: COLORS.danger, fontSize: 13, marginTop: 10, fontFamily: FONTS.body },
   buttonWrap: { marginTop: 18 },
   links: { marginTop: 8 },
 });

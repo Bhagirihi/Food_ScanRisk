@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 
-import { COLORS, SERIF } from '../lib/theme';
+import { COLORS, FONTS } from '../lib/theme';
 
 const { height: H } = Dimensions.get('window');
 const DIM = 'rgba(24,10,14,0.66)';
@@ -219,9 +219,9 @@ const styles = StyleSheet.create({
   ring: {
     position: 'absolute',
     borderWidth: 2.5,
-    borderColor: COLORS.goldBright,
+    borderColor: COLORS.amber,
     borderRadius: 16,
-    shadowColor: COLORS.goldBright,
+    shadowColor: COLORS.amber,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.7,
     shadowRadius: 10,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     borderWidth: 1.5,
-    borderColor: COLORS.gold,
+    borderColor: COLORS.amber,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   stepCount: {
     fontSize: 10.5,
     fontWeight: '800',
-    color: COLORS.goldDeep,
+    color: COLORS.amberDeep,
     letterSpacing: 1.6,
     marginBottom: 6,
   },
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     fontSize: 19,
     fontWeight: '700',
     color: COLORS.maroon,
-    fontFamily: SERIF,
+    fontFamily: FONTS.headline,
     marginBottom: 6,
   },
   bubbleBody: { fontSize: 14, color: COLORS.inkSoft, lineHeight: 21 },
@@ -266,10 +266,10 @@ const styles = StyleSheet.create({
   },
   bubbleDots: { flexDirection: 'row', gap: 6 },
   bubbleDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.line },
-  bubbleDotActive: { width: 22, backgroundColor: COLORS.gold },
+  bubbleDotActive: { width: 22, backgroundColor: COLORS.amber },
   bubbleBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   linkBtn: { paddingVertical: 8, paddingHorizontal: 4 },
-  linkText: { fontSize: 14, fontWeight: '700', color: COLORS.saffron },
+  linkText: { fontSize: 14, fontWeight: '700', color: COLORS.amberDeep },
   nextBtn: {
     backgroundColor: COLORS.maroon,
     borderRadius: 999,

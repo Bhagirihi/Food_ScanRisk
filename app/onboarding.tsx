@@ -1,29 +1,33 @@
 // First-run onboarding: 3 steps, then sign-in. Shown once (see _layout).
+// The Nutella example uses real, live-verified data for barcode
+// 3017624010701: score 23/50 Moderate (Nutri-Score E +12, sugar 56.3g +6,
+// saturated fat 10.6g +5).
 
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { completeOnboarding } from '../src/lib/session';
-import { COLORS, SERIF } from '../src/lib/theme';
-import { Ornament, PrimaryButton, TextButton } from '../src/components/ui';
+import { COLORS, FONTS } from '../src/lib/theme';
+import { PrimaryButton, TextButton } from '../src/components/ui';
 
 const STEPS = [
   {
     visual: 'scan',
-    title: 'Scan any barcode',
-    body: 'Point your camera at a product barcode — the app reads it in seconds. No typing, no searching.',
+    title: 'Scan Any Barcode',
+    body: 'Point your camera at any packaged grocery or drink. The barcode is read in seconds — no typing, no searching.',
   },
   {
     visual: 'score',
-    title: 'See the risk, explained',
+    title: 'See Risk Explained',
     body: 'Every product gets a 0–50 risk score. 0 is low, 50 is very high — and each point tells you exactly why it counts.',
   },
   {
-    visual: 'history',
-    title: 'Keep track',
-    body: 'Everything you scan is saved on your phone, so you can compare products and check back any time.',
+    visual: 'track',
+    title: 'Track & Choose Better',
+    body: 'Your last 50 scans stay on your phone, and allergen alerts warn you when a product contains something you flagged.',
   },
 ] as const;
 
@@ -39,43 +43,54 @@ function Visual({ kind }: { kind: (typeof STEPS)[number]['visual'] }) {
               key={i}
               style={{
                 width: w * 3,
-                height: i % 3 === 0 ? 64 : 48,
-                backgroundColor: i % 2 === 0 ? COLORS.maroon : COLORS.gold,
+                height: i % 3 === 0 ? 56 : 42,
+                backgroundColor: i % 2 === 0 ? COLORS.maroon : COLORS.amber,
               }}
             />
           ))}
         </View>
-        <Text style={styles.visualCaption}>3017 6240 1070 1</Text>
+        <Text style={styles.productName}>NUTELLA HAZELNUT SPREAD</Text>
+        <Text style={styles.productMeta}>400 g • FERRERO • 3 017624 010701</Text>
+        <View style={styles.miniScore}>
+          <Text style={styles.miniScoreValue}>23 / 50</Text>
+          <View style={styles.miniScoreChip}>
+            <Text style={styles.miniScoreChipText}>Moderate risk</Text>
+          </View>
+        </View>
       </View>
     );
   }
   if (kind === 'score') {
     return (
       <View style={styles.visual}>
-        <Text style={styles.visualScore}>
-          23<Text style={styles.visualScoreOf}> / 50</Text>
-        </Text>
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: '46%' }]} />
-        </View>
-        <View style={styles.visualBadge}>
-          <Text style={styles.visualBadgeText}>Moderate risk</Text>
-        </View>
+        <Text style={styles.visualCaption}>NUTELLA — REAL LABEL DATA</Text>
+        {[
+          { icon: 'fact-check', label: 'Nutri-Score E', pts: '+12 pts' },
+          { icon: 'water-drop', label: 'Very high sugar: 56.3 g / 100 g', pts: '+6 pts' },
+          { icon: 'opacity', label: 'Very high saturated fat: 10.6 g / 100 g', pts: '+5 pts' },
+        ].map((f) => (
+          <View key={f.label} style={styles.factorRow}>
+            <MaterialIcons name={f.icon as never} size={20} color={COLORS.maroon} />
+            <Text style={styles.factorLabel}>{f.label}</Text>
+            <Text style={styles.factorPts}>{f.pts}</Text>
+          </View>
+        ))}
+        <Text style={styles.visualNote}>Every point tells you why it counts — no hidden math.</Text>
       </View>
     );
   }
   return (
     <View style={styles.visual}>
       {[
-        { name: 'Nutella', score: 23, color: '#B77900' },
-        { name: 'Rolled Oats', score: 4, color: '#1E8E3E' },
-        { name: 'Potato Chips', score: 34, color: '#E8710A' },
+        { icon: 'shield', title: 'Allergen alerts', body: 'Pick yours in Profile — get warned on results.' },
+        { icon: 'history', title: 'Last 50 scans saved', body: 'Everything stays on your phone.' },
+        { icon: 'swap-horiz', title: 'Compare and choose', body: 'Pick the better option before you buy.' },
       ].map((r) => (
-        <View key={r.name} style={styles.historyRow}>
-          <View style={[styles.historyDot, { backgroundColor: r.color }]} />
-          <Text style={styles.historyName}>{r.name}</Text>
-          <View style={[styles.historyChip, { backgroundColor: r.color }]}>
-            <Text style={styles.historyChipText}>{r.score}</Text>
+        <View key={r.title} style={styles.trackRow}>
+          <MaterialIcons name={r.icon as never} size={22} color={COLORS.maroon} />
+          <View style={styles.trackText}>
+            <Text style={styles.trackTitle}>{r.title}</Text>
+            <Text style={styles.trackBody}>{r.body}</Text>
           </View>
         </View>
       ))}
@@ -96,9 +111,11 @@ export default function Onboarding() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.top}>
-        <Image source={require('../assets/icon.png')} style={styles.logo} />
-        <Text style={styles.brand}>ScanRisk</Text>
-        <Ornament />
+        <View style={styles.brandRow}>
+          <Image source={require('../assets/icon.png')} style={styles.logo} />
+          <Text style={styles.brand}>ScanRisk</Text>
+        </View>
+        <TextButton label="Skip" onPress={finish} />
       </View>
 
       <Visual kind={step.visual} />
@@ -112,68 +129,76 @@ export default function Onboarding() {
         ))}
       </View>
 
-      <PrimaryButton label={last ? 'Get started' : 'Next'} onPress={() => (last ? finish() : setIndex(index + 1))} />
+      <PrimaryButton
+        label={last ? 'Get started' : 'Continue'}
+        icon="arrow-forward"
+        onPress={() => (last ? finish() : setIndex(index + 1))}
+      />
       {index > 0 ? <TextButton label="Back" onPress={() => setIndex(index - 1)} /> : null}
-      <TextButton label="Skip" onPress={finish} />
+      <TextButton label="Already have an account? Sign In" onPress={finish} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: 'center' },
-  top: { alignItems: 'center', marginBottom: 36 },
-  logo: { width: 72, height: 72, borderRadius: 18, marginBottom: 12 },
-  brand: { color: COLORS.maroon, fontSize: 30, fontWeight: '700', fontFamily: SERIF, marginBottom: 10 },
+  container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: COLORS.bg },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 36,
+  },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logo: { width: 40, height: 40, borderRadius: 10 },
+  brand: { color: COLORS.maroon, fontSize: 22, fontWeight: '700', fontFamily: FONTS.headline },
   visual: {
     alignItems: 'center',
     backgroundColor: COLORS.card,
     borderColor: COLORS.line,
-    borderRadius: 22,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 28,
+    padding: 24,
     marginBottom: 28,
   },
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 5 },
-  visualCaption: { color: COLORS.soft, fontSize: 14, letterSpacing: 3, marginTop: 14 },
-  visualScore: { color: '#B77900', fontSize: 52, fontWeight: '800' },
-  visualScoreOf: { color: COLORS.soft, fontSize: 20 },
-  track: {
-    backgroundColor: '#EDE8E0',
-    borderRadius: 999,
-    height: 12,
-    marginTop: 14,
-    overflow: 'hidden',
-    width: '100%',
+  productName: {
+    color: COLORS.ink,
+    fontSize: 15,
+    fontWeight: '800',
+    fontFamily: FONTS.headline,
+    marginTop: 16,
+    textAlign: 'center',
   },
-  fill: { backgroundColor: '#B77900', borderRadius: 999, height: 12 },
-  visualBadge: {
-    backgroundColor: '#B77900',
-    borderRadius: 999,
-    marginTop: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+  productMeta: { color: COLORS.soft, fontSize: 13, marginTop: 4, textAlign: 'center' },
+  miniScore: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
+  miniScoreValue: { color: COLORS.amberDeep, fontSize: 26, fontWeight: '800', fontFamily: FONTS.headline },
+  miniScoreChip: { backgroundColor: COLORS.amber, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  miniScoreChipText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  visualCaption: {
+    color: COLORS.soft,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    marginBottom: 14,
+    fontFamily: FONTS.bodyBold,
   },
-  visualBadgeText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  historyRow: { alignItems: 'center', flexDirection: 'row', marginVertical: 6, width: '100%' },
-  historyDot: { borderRadius: 6, height: 12, width: 12 },
-  historyName: { flex: 1, fontSize: 16, fontWeight: '700', marginLeft: 10 },
-  historyChip: {
-    alignItems: 'center',
-    borderRadius: 999,
-    height: 32,
-    justifyContent: 'center',
-    width: 32,
-  },
-  historyChipText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  factorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%', paddingVertical: 8 },
+  factorLabel: { flex: 1, fontSize: 14.5, fontWeight: '600', color: COLORS.ink, fontFamily: FONTS.bodySemi },
+  factorPts: { fontSize: 14, fontWeight: '800', color: COLORS.maroon, fontFamily: FONTS.bodyBold },
+  visualNote: { color: COLORS.soft, fontSize: 13, marginTop: 12, textAlign: 'center', lineHeight: 19 },
+  trackRow: { flexDirection: 'row', alignItems: 'center', gap: 12, width: '100%', paddingVertical: 9 },
+  trackText: { flex: 1 },
+  trackTitle: { fontSize: 15, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
+  trackBody: { fontSize: 13, color: COLORS.soft, marginTop: 2, lineHeight: 18 },
   title: {
     color: COLORS.maroon,
     fontSize: 28,
     fontWeight: '700',
-    fontFamily: SERIF,
+    fontFamily: FONTS.headline,
     textAlign: 'center',
   },
-  body: { color: COLORS.inkSoft, fontSize: 16, lineHeight: 24, marginTop: 12, textAlign: 'center' },
+  body: { color: COLORS.inkSoft, fontSize: 16, lineHeight: 24, marginTop: 12, textAlign: 'center', fontFamily: FONTS.body },
   dots: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginVertical: 24 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.line },
-  dotActive: { width: 22, backgroundColor: COLORS.gold },
+  dotActive: { width: 22, backgroundColor: COLORS.amber },
 });

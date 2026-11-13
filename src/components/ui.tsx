@@ -1,49 +1,83 @@
-// Shared UI pieces in the house style: warm ivory cards with a gold top
-// edge (Shubh), maroon primary buttons, serif display type.
+// Shared UI pieces in the Stitch design system: white cards, pill buttons
+// (maroon primary, amber secondary, outlined), Inter body, Plus Jakarta
+// Sans headlines, MaterialIcons.
 
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
-import { COLORS, RADIUS, SERIF } from '../lib/theme';
+import { COLORS, FONTS, RADIUS } from '../lib/theme';
+
+type IconName = keyof typeof MaterialIcons.glyphMap;
 
 export function Card({ children, style }: { children: ReactNode; style?: object }) {
-  return (
-    <View style={[styles.card, style]}>
-      <View style={styles.cardGoldEdge} />
-      {children}
-    </View>
-  );
+  return <View style={[styles.card, style]}>{children}</View>;
 }
 
 export function SectionTitle({ children, sub }: { children: ReactNode; sub?: string }) {
   return (
     <View style={styles.sectionWrap}>
-      <View style={styles.sectionRow}>
-        <View style={styles.sectionRule} />
-        <Text style={styles.sectionTitle}>{children}</Text>
-      </View>
+      <Text style={styles.sectionTitle}>{children}</Text>
       {!!sub && <Text style={styles.sectionSub}>{sub}</Text>}
     </View>
   );
 }
 
-/** Maroon pill button — the primary action everywhere. */
-export function PrimaryButton({
-  label,
-  onPress,
-  disabled,
-}: {
+interface ButtonProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
-}) {
+  icon?: IconName;
+  style?: object;
+}
+
+function ButtonRow({ icon, label, textStyle }: { icon?: IconName; label: string; textStyle: object }) {
+  return (
+    <View style={styles.buttonRow}>
+      {icon ? <MaterialIcons name={icon} size={20} color="#fff" /> : null}
+      <Text style={textStyle}>{label}</Text>
+    </View>
+  );
+}
+
+/** Maroon pill button — the primary action everywhere. */
+export function PrimaryButton({ label, onPress, disabled, icon, style }: ButtonProps) {
   return (
     <Pressable
-      style={[styles.primaryButton, disabled && styles.primaryButtonDisabled]}
+      style={[styles.primaryButton, disabled && styles.disabled, style]}
       onPress={onPress}
       disabled={disabled}
     >
-      <Text style={styles.primaryButtonText}>{label}</Text>
+      <ButtonRow icon={icon} label={label} textStyle={styles.primaryButtonText} />
+    </Pressable>
+  );
+}
+
+/** Amber pill button — the secondary action. */
+export function SecondaryButton({ label, onPress, disabled, icon, style }: ButtonProps) {
+  return (
+    <Pressable
+      style={[styles.secondaryButton, disabled && styles.disabled, style]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <ButtonRow icon={icon} label={label} textStyle={styles.secondaryButtonText} />
+    </Pressable>
+  );
+}
+
+/** Outlined pill button — maroon border and text, transparent fill. */
+export function OutlinedButton({ label, onPress, disabled, icon, style }: ButtonProps) {
+  return (
+    <Pressable
+      style={[styles.outlinedButton, disabled && styles.disabled, style]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <View style={styles.buttonRow}>
+        {icon ? <MaterialIcons name={icon} size={20} color={COLORS.maroon} /> : null}
+        <Text style={styles.outlinedButtonText}>{label}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -57,14 +91,21 @@ export function TextButton({ label, onPress }: { label: string; onPress: () => v
   );
 }
 
-/** Small gold ornament divider: — ◆ — */
-export function Ornament({ color }: { color?: string }) {
-  const c = color ?? COLORS.gold;
+/** Small pill chip, e.g. a score or a NOVA label. */
+export function Chip({ label, color, style }: { label: string; color: string; style?: object }) {
   return (
-    <View style={styles.ornament}>
-      <View style={[styles.ornamentLine, { backgroundColor: c }]} />
-      <Text style={{ color: c, fontSize: 11 }}>◆</Text>
-      <View style={[styles.ornamentLine, { backgroundColor: c }]} />
+    <View style={[styles.chip, { backgroundColor: color }, style]}>
+      <Text style={styles.chipText}>{label}</Text>
+    </View>
+  );
+}
+
+/** Brief confirmation toast, rendered above the bottom tabs. */
+export function Toast({ message, bottom }: { message: string; bottom?: number }) {
+  return (
+    <View style={[styles.toast, { bottom: bottom ?? 100 }]} pointerEvents="none">
+      <MaterialIcons name="check-circle" size={18} color="#fff" />
+      <Text style={styles.toastText}>{message}</Text>
     </View>
   );
 }
@@ -72,47 +113,68 @@ export function Ornament({ color }: { color?: string }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.card,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.lg,
     padding: 18,
     borderWidth: 1,
     borderColor: COLORS.line,
-    overflow: 'hidden',
-    shadowColor: '#7A5A1E',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 14,
-    elevation: 4,
-  },
-  cardGoldEdge: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    backgroundColor: COLORS.goldBright,
-    opacity: 0.55,
+    shadowColor: '#171321',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   sectionWrap: { marginTop: 26, marginBottom: 10 },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  sectionRule: { width: 26, height: 3, borderRadius: 2, backgroundColor: COLORS.gold },
-  sectionTitle: {
-    fontSize: 21,
-    fontWeight: '700',
-    color: COLORS.ink,
-    fontFamily: SERIF,
-    letterSpacing: 0.2,
-  },
-  sectionSub: { fontSize: 13, color: COLORS.soft, marginTop: 4, marginLeft: 36, lineHeight: 18 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline },
+  sectionSub: { fontSize: 13, color: COLORS.soft, marginTop: 4, lineHeight: 18, fontFamily: FONTS.body },
+  buttonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   primaryButton: {
     alignItems: 'center',
     backgroundColor: COLORS.maroon,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.pill,
     paddingVertical: 15,
+    paddingHorizontal: 20,
   },
-  primaryButtonDisabled: { opacity: 0.5 },
-  primaryButtonText: { color: '#FFF7E8', fontSize: 16, fontWeight: '700' },
+  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', fontFamily: FONTS.bodySemi },
+  secondaryButton: {
+    alignItems: 'center',
+    backgroundColor: COLORS.amber,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  secondaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', fontFamily: FONTS.bodySemi },
+  outlinedButton: {
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderColor: COLORS.maroon,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1.5,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  outlinedButtonText: { color: COLORS.maroon, fontSize: 16, fontWeight: '700', fontFamily: FONTS.bodySemi },
+  disabled: { opacity: 0.5 },
   textButton: { alignItems: 'center', paddingVertical: 10 },
-  textButtonText: { color: COLORS.maroon, fontSize: 15, fontWeight: '700' },
-  ornament: { flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' },
-  ornamentLine: { height: 1, width: 44, opacity: 0.7 },
+  textButtonText: { color: COLORS.maroon, fontSize: 15, fontWeight: '700', fontFamily: FONTS.bodySemi },
+  chip: { borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 },
+  chipText: { color: '#fff', fontSize: 13, fontWeight: '800', fontFamily: FONTS.bodyBold },
+  toast: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.ink,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  toastText: { color: '#fff', fontSize: 14, fontWeight: '700', fontFamily: FONTS.bodySemi },
 });

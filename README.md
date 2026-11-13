@@ -67,7 +67,14 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
 
 ## Status (13 Nov 2026)
 
-- Code on GitHub: Bhagirihi/Food_ScanRisk, branch `main`.
+- v2: full rebuild to the Google Stitch "NutriScan" design (maroon #4A121A,
+  amber #D97706, Plus Jakarta Sans + Inter, pill buttons, bottom tabs,
+  SVG risk gauge, allergen alerts, history search/filters/CSV export,
+  password strength meter, Apple/Google sign-in). App name stays ScanRisk.
+- Scoring model unchanged — Nutella still 23 Moderate.
+- Code on GitHub: Bhagirihi/Food_ScanRisk, branch `main` (v2 not pushed yet).
 - v1 code-complete, typecheck + Android export + expo-doctor 20/20 green.
 - NOT phone-tested yet. No EAS build yet.
-- Sign-in needs Supabase project keys (guest mode works without them).
+- Sign-in needs Supabase project keys (guest mode works without them);
+  Apple/Google sign-in also needs `scanrisk://auth` added as a redirect URL
+  in the Supabase dashboard.

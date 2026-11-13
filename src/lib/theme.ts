@@ -1,50 +1,57 @@
-import { Platform } from 'react-native';
+// ScanRisk theme — Stitch "NutriScan" design system (13 Nov 2026 rebuild).
+// Primary maroon, amber secondary, green tertiary, slate neutrals;
+// Plus Jakarta Sans headlines, Inter body. Risk-band colors live here —
+// src/lib/risk.ts owns the scoring model and must not be edited.
 
-/**
- * ScanRisk theme — merged house style:
- * Shubh Muhurat's "royal temple" palette (warm ivory, deep maroon, antique
- * gold, serif display type) + Rasoi's radius / spacing / shadow scale and
- * orange-gold CTA gradient.
- */
+import type { RiskBand } from './risk';
+
 export const COLORS = {
-  // Shubh base
-  bg: '#FAF3E7',
-  bgDeep: '#F3E8D3',
-  card: '#FFFDF8',
-  ink: '#2B2118',
-  inkSoft: '#4A3A2A',
-  soft: '#8A7A63',
-  line: '#EADFC6',
-  gold: '#C19A3D',
-  goldBright: '#E3C565',
-  goldDeep: '#9A7B24',
-  maroon: '#5E1224',
-  maroonDeep: '#3D0B18',
-  saffron: '#C2570B',
-  saffronSoft: '#FBEBD7',
-  // Rasoi accents
-  orange: '#FF6B35',
-  orangeDeep: '#C44A00',
-  cream: '#FAFAFA',
-  charcoal: '#1A1A2E',
-  muted: '#6B7280',
-  border: '#E5E7EB',
-  placeholder: '#9CA3AF',
-  // Status
-  danger: '#A61C1C',
-  dangerBg: '#F9E8E4',
-  good: '#177245',
-  goodBg: '#E4F2E6',
+  bg: '#F8F7FC',
+  card: '#FFFFFF',
+  ink: '#171321',
+  inkSoft: '#3A3444',
+  soft: '#64748B',
+  line: '#E5E3F0',
+  maroon: '#4A121A',
+  maroonDeep: '#3B0710',
+  maroonSoft: '#F3E4E6',
+  amber: '#D97706',
+  amberDeep: '#B56100',
+  amberSoft: '#FDF0DC',
+  green: '#15803D',
+  greenSoft: '#E7F4EA',
+  orange: '#EA580C',
+  red: '#DC2626',
+  danger: '#DC2626',
+  dangerBg: '#FDECEC',
+  good: '#15803D',
+  goodBg: '#E7F4EA',
   white: '#FFFFFF',
+  placeholder: '#9AA3B2',
 };
 
-export const SERIF = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' }) as string;
+// Font family names registered by @expo-google-fonts. If a font fails to
+// load, React Native falls back to the system font — the app never blocks.
+export const FONTS = {
+  headline: 'PlusJakartaSans_700Bold',
+  headlineSemi: 'PlusJakartaSans_600SemiBold',
+  body: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
+  bodySemi: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
+} as const;
+
+/** Display colors for the risk bands (design tokens, not scoring). */
+export const BANDS: Record<RiskBand, { label: string; color: string; range: string }> = {
+  low: { label: 'Low risk', color: '#15803D', range: '0–10' },
+  moderate: { label: 'Moderate risk', color: '#D97706', range: '11–25' },
+  high: { label: 'High risk', color: '#EA580C', range: '26–40' },
+  'very-high': { label: 'Very high risk', color: '#DC2626', range: '41–50' },
+};
 
 export const GRADIENTS = {
-  hero: ['#4A0E1F', '#7A1E2B', '#A83A1F'] as const,
-  gold: ['#E9CE7A', '#C19A3D', '#9A7B24'] as const,
-  cta: ['#C44A00', '#FF6B35', '#FF9933'] as const,
-  card: ['#FFFDF8', '#FBF3E2'] as const,
+  hero: ['#3B0710', '#4A121A', '#6B2230'] as const,
+  auth: ['#FDFBFF', '#F4EFFA'] as const,
 };
 
 export const RADIUS = {

@@ -48,3 +48,15 @@ export async function clearHistory(): Promise<void> {
     // Ignore.
   }
 }
+
+export async function removeRecord(barcode: string): Promise<void> {
+  try {
+    const existing = await getHistory();
+    await AsyncStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(existing.filter((r) => r.barcode !== barcode)),
+    );
+  } catch {
+    // Ignore.
+  }
+}

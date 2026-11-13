@@ -1,11 +1,14 @@
-// Branded in-app splash: hero gradient + pulsing barcode mark + wordmark.
-// Shows while the app checks onboarding / session state (see _layout).
+// Branded in-app splash (Stitch design): deep-maroon gradient, white
+// rounded-square logo with a gold glow, wordmark, tagline, progress bar,
+// stats row, Open Food Facts footer. Shows while the app checks
+// onboarding / session state (see _layout).
 
 import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
-import { COLORS, GRADIENTS, SERIF } from '../lib/theme';
+import { COLORS, FONTS, GRADIENTS } from '../lib/theme';
 
 const BARS = [3, 2, 6, 2, 3, 8, 2, 4, 3, 2, 6, 3];
 
@@ -26,46 +29,91 @@ export default function BrandedSplash() {
   return (
     <LinearGradient colors={GRADIENTS.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.root}>
       <Animated.View style={{ opacity: pulse }}>
-        <View style={styles.bars}>
-          {BARS.map((w, i) => (
-            <View
-              key={i}
-              style={{ width: w * 3, height: i % 3 === 0 ? 72 : 56, backgroundColor: COLORS.goldBright }}
-            />
-          ))}
+        <View style={styles.logoBox}>
+          <View style={styles.bars}>
+            {BARS.map((w, i) => (
+              <View
+                key={i}
+                style={{
+                  width: w * 3,
+                  height: i % 3 === 0 ? 56 : 42,
+                  backgroundColor: COLORS.amber,
+                }}
+              />
+            ))}
+          </View>
         </View>
       </Animated.View>
       <Text style={styles.name}>ScanRisk</Text>
-      <Text style={styles.tag}>S C A N &nbsp;•&nbsp; K N O W &nbsp;•&nbsp; C H O O S E</Text>
+      <Text style={styles.tag}>KNOW WHAT YOU CONSUME</Text>
+
+      <View style={styles.progressWrap}>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: '100%' }]} />
+        </View>
+        <Text style={styles.sync}>SYNC 99.8%</Text>
+      </View>
+
+      <View style={styles.stats}>
+        <View style={styles.stat}>
+          <MaterialIcons name="science" size={18} color="#F5D98B" />
+          <Text style={styles.statText}>Additives checked</Text>
+        </View>
+        <View style={styles.stat}>
+          <MaterialIcons name="restaurant" size={18} color="#F5D98B" />
+          <Text style={styles.statText}>Nutrition / 100 g</Text>
+        </View>
+        <View style={styles.stat}>
+          <MaterialIcons name="verified" size={18} color="#F5D98B" />
+          <Text style={styles.statText}>Allergen alerts</Text>
+        </View>
+      </View>
+
       <View style={styles.foot}>
-        <Text style={styles.footText}>Preparing ScanRisk…</Text>
+        <Text style={styles.footText}>Powered by Open Food Facts</Text>
       </View>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  bars: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderColor: COLORS.gold,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    paddingHorizontal: 22,
-    paddingVertical: 18,
+  root: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  logoBox: {
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 24,
+    elevation: 12,
   },
+  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
   name: {
-    color: '#FFF7E8',
+    color: '#fff',
     fontSize: 38,
     fontWeight: '700',
-    fontFamily: SERIF,
+    fontFamily: FONTS.headline,
     marginTop: 28,
     letterSpacing: 0.4,
   },
-  tag: { color: '#F5D98B', fontSize: 12, fontWeight: '700', letterSpacing: 2, marginTop: 12 },
-  foot: { position: 'absolute', bottom: 72 },
-  footText: { color: '#E8CF9F', fontSize: 13.5 },
+  tag: { color: '#F5D98B', fontSize: 12, fontWeight: '700', letterSpacing: 2.5, marginTop: 10 },
+  progressWrap: { marginTop: 36, width: '100%', alignItems: 'center' },
+  progressTrack: {
+    width: '100%',
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    overflow: 'hidden',
+  },
+  progressFill: { height: 6, borderRadius: 999, backgroundColor: COLORS.amber },
+  sync: { color: '#E8CF9F', fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginTop: 10 },
+  stats: { flexDirection: 'row', gap: 20, marginTop: 36 },
+  stat: { alignItems: 'center', gap: 6, flex: 1 },
+  statText: { color: '#F5D98B', fontSize: 11.5, fontWeight: '600', textAlign: 'center', fontFamily: FONTS.bodySemi },
+  foot: { position: 'absolute', bottom: 56 },
+  footText: { color: '#E8CF9F', fontSize: 13 },
 });

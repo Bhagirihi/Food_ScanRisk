@@ -48,11 +48,36 @@ Docs: https://docs.expo.dev/eas/index.md
 - Risk score lives in `src/lib/risk.ts` (pure, node-tested). Weights are in the
   file header — change them there, not in the UI.
 - Tests: compile the two pure lib files and run `node scripts/test-risk.mjs`.
-- App id: com.bytesphere.scanrisk (working name ScanRisk, renameable).
-- Not yet: GitHub repo, EAS build, phone test, real icon.
-- UI: merged house theme — Shubh royal-temple palette (ivory #FAF3E7,
-  maroon #5E1224, gold #C19A3D, serif) + Rasoi radius/spacing/CTA gradient.
-  Tokens in `src/lib/theme.ts`, shared pieces in `src/components/ui.tsx`.
+- App id: com.bytesphere.scanrisk (name ScanRisk — final, picked 13 Nov 2026).
+- Repo: Bhagirihi/Food_ScanRisk (main). Not yet: EAS build, phone test.
+- UI: Stitch "NutriScan" design system (13 Nov 2026 rebuild) — primary maroon
+  #4A121A, amber #D97706, green #15803D, slate #64748B, pale bg #F8F7FC,
+  Plus Jakarta Sans headlines + Inter body. Tokens in `src/lib/theme.ts`,
+  shared pieces in `src/components/ui.tsx`. Risk-band DISPLAY colors live in
+  theme BANDS; the scoring model in `src/lib/risk.ts` is untouched (do not
+  adopt the Stitch 42-point weights — Nutella stays 23 Moderate).
+- Fonts: @expo-google-fonts/plus-jakarta-sans + inter, loaded with useFonts
+  in app/_layout.tsx WITHOUT gating (fall back to system fonts if they fail).
+- Navigation: Stack only, all screens headerShown false — top bars are
+  in-screen. Bottom tabs are a component (`src/components/BottomTabs.tsx`)
+  on Home/History/Profile, NOT expo-router Tabs.
+- SafeAreaView: every screen is wrapped with ALL edges (no Stack headers
+  remain to cover the top inset).
+- Gauge: semi-circular arc via react-native-svg (`src/components/ScoreGauge.tsx`).
+- Allergens: `src/lib/allergens.ts` (10 common allergens, AsyncStorage,
+  matched against OFF allergen tags on Result; picker in Profile).
+- Settings: `src/lib/settings.ts` (torch default, Pro Tip dismissal,
+  tips-enabled flag read by the Tour effects).
+- History export: per-row CSV via expo-file-system (cache dir) +
+  expo-sharing; per-row delete via `removeRecord` in `src/lib/history.ts`.
+- OAuth: Apple/Google via supabase signInWithOAuth + expo-web-browser
+  openAuthSessionAsync + exchangeCodeForSession, redirect
+  `scanrisk://auth` (must be added in the Supabase dashboard); graceful
+  "not connected yet" handling when Supabase is unconfigured.
+- Splash: `expo-splash-screen` config plugin in app.json; art
+  `assets/splash.png`, solid maroon #4A121A bg, regenerable via
+  `scripts/make-splash.py` (uses Plus Jakarta Sans from node_modules when
+  present, Noto Serif fallback).
 - Flow: BrandedSplash (boot) -> onboarding (once) -> login/register/forgot
   (Supabase email+password, `src/lib/supabase.ts`) -> home. Guest mode when
   Supabase is unconfigured (`scanrisk:guest:v1`); profile has sign out,
@@ -66,11 +91,9 @@ Docs: https://docs.expo.dev/eas/index.md
 - Install quirk: `npx expo install` fails on a pre-existing react-dom
   19.3.1 vs react 19.3.0 peer conflict — new packages need
   `npm install --legacy-peer-deps`, then verify with doctor + export.
+  react-native-svg must be pinned to 15.16.0 (doctor expects it for SDK 58).
 - Logo: `scripts/make-logo.py` (icon.png, adaptive foreground + monochrome,
   favicon); adaptive bg is maroon #5E1224 in app.json.
-- SafeAreaView: every screen is wrapped; screens with a Stack header use
-  edges left/right/bottom only (the header already covers the top inset),
-  headerless screens (onboarding, auth) use all edges.
 - Home asks for the camera on tapping Scan (useCameraPermissions in index);
   the scan screen keeps the fallback and offers Open Settings when the
   permission is permanently denied (canAskAgain false).
