@@ -86,6 +86,30 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
   data rows with real history count and measured cache size, About card with
   real version v1.0.0 and an Open Source link only (no Privacy/Terms — those
   docs don't exist; no fake "Database synced" line).
+- Home rebuilt to the Stitch "Home Dashboard" frame: "NUTRITIONAL
+  INTELLIGENCE" eyebrow, pale-blue Pro Tip card, one large dark-maroon
+  gradient Scan card (gold corner brackets, glowing barcode icon + scanline,
+  "Scan Barcode →", Manual Barcode Entry + Try Nutella Demo pills inside),
+  Health Snapshot with "Last 30 Days" and "18 /50" + short band label
+  ("Moderate") and "98 69%" low-risk formats. No Pro pill (no Pro tier).
+- History rebuilt to the Stitch "History Log" frame: bell + avatar top bar,
+  green dot + "{N} Scanned Items" + CLEAR HISTORY pill in the header, search
+  with real count, filter pills in one horizontal scrollable row (never
+  wrapping — the ScrollView needs flexGrow: 0), rows with real product
+  thumbnails (placeholder when missing), "BRAND • Today 14:22 / Yesterday /
+  N days ago", note from real first ingredients + top nutrient, dark score
+  pill "23 MOD", and a warning line derived from the product's real top
+  factors ("HIGH SUGAR & SATURATED FAT WARNING", green "CLEAN INGREDIENTS"
+  when no concern factors). Tap opens Result; per-row export/delete kept.
+- Register rebuilt to the Stitch "Create Account" frame: header wordmark,
+  white title card ("Create Your ScanRisk Account", "real-time nutritional
+  intelligence"), icon fields with label rows (Full Name / Required, Email /
+  Institutional / Personal, Password with live strength pill), strength
+  meter always visible (4 segments + 3 check pills), Terms as plain text
+  with NO links (the docs don't exist yet), maroon Create Account button,
+  "Already an active subscriber? Sign In" + "Continue as guest". The
+  SetupNotice on Register is a small dismissible one-line note; Login /
+  Forgot keep the full box.
 - Scoring model unchanged. Nutella 400g jar (3017624010701) scores 23 Moderate
   (live data has no NOVA group, no trans fat); the 15g mini pack (80177173)
   scores 38 High (live data has NOVA 4 + trans fat 0.1g) — same model, two

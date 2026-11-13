@@ -2,19 +2,20 @@ import { useCallback, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Tour, { type Measurable } from '../src/components/Tour';
 import BottomTabs from '../src/components/BottomTabs';
-import { Card, SectionTitle, TextButton, Toast } from '../src/components/ui';
+import { Card, Toast } from '../src/components/ui';
 import { hasSeenTip, markTipSeen } from '../src/lib/tips';
 import { getProTipDismissed, getTipsEnabled, setProTipDismissed } from '../src/lib/settings';
 import { getHistory, type ScanRecord } from '../src/lib/history';
 import { BANDS, bandForScore, type RiskBand } from '../src/lib/risk';
 import { getSession } from '../src/lib/supabase';
 import { isGuest } from '../src/lib/session';
-import { COLORS, FONTS } from '../src/lib/theme';
+import { COLORS, FONTS, GRADIENTS } from '../src/lib/theme';
 
 const EXAMPLE_BARCODE = '3017624010701';
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -56,6 +57,14 @@ const RECENT_PILL: Record<RiskBand, { bg: string; color: string; label: string }
   moderate: { bg: COLORS.paleAmber, color: COLORS.amberBrown, label: 'MOD' },
   high: { bg: COLORS.paleRed, color: COLORS.danger, label: 'HIGH' },
   'very-high': { bg: COLORS.paleRed, color: COLORS.danger, label: 'V. HIGH' },
+};
+
+/** Short band label for the Health Snapshot middle stat ("Moderate", not "Moderate risk"). */
+const SNAP_LABEL: Record<RiskBand, string> = {
+  low: 'Low-Risk',
+  moderate: 'Moderate',
+  high: 'High-Risk',
+  'very-high': 'Very High',
 };
 
 export default function Home() {
@@ -159,12 +168,13 @@ export default function Home() {
             </View>
           </View>
 
+          <Text style={styles.eyebrow}>NUTRITIONAL INTELLIGENCE</Text>
           <Text style={styles.greeting}>Welcome back, {displayName}</Text>
 
           {proTipVisible ? (
             <Card style={styles.tipCard}>
               <View style={styles.tipRow}>
-                <MaterialIcons name="lightbulb" size={22} color={COLORS.amber} />
+                <MaterialIcons name="lightbulb-outline" size={22} color={COLORS.navy} />
                 <Text style={styles.tipTitle}>Pro Tip for Quick Scanning</Text>
                 <Pressable onPress={dismissProTip} accessibilityLabel="Dismiss tip">
                   <MaterialIcons name="close" size={20} color={COLORS.soft} />
@@ -179,32 +189,56 @@ export default function Home() {
           <Pressable
             ref={(node) => { scanRef.current = node; }}
             onPress={onScanPress}
-            style={styles.scanButton}
+            style={styles.scanCardWrap}
           >
-            <MaterialIcons name="qr-code-scanner" size={30} color="#fff" />
-            <View>
-              <Text style={styles.scanButtonText}>Scan Barcode</Text>
-              <Text style={styles.scanButtonSub}>Tap to activate camera &amp; analyze</Text>
-            </View>
-            <MaterialIcons name="arrow-forward" size={22} color="#fff" style={styles.scanArrow} />
+            <LinearGradient
+              colors={GRADIENTS.hero}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.scanCard}
+            >
+              <View style={styles.viewfinder}>
+                <View style={[styles.corner, styles.cornerTL]} />
+                <View style={[styles.corner, styles.cornerTR]} />
+                <View style={[styles.corner, styles.cornerBL]} />
+                <View style={[styles.corner, styles.cornerBR]} />
+                <View style={styles.scanIconWrap}>
+                  <MaterialIcons name="qr-code-scanner" size={46} color={COLORS.amber} />
+                  <View style={styles.scanline} />
+                </View>
+              </View>
+              <View style={styles.scanCardTitleRow}>
+                <Text style={styles.scanCardTitle}>Scan Barcode</Text>
+                <MaterialIcons name="arrow-forward" size={24} color="#fff" />
+              </View>
+              <Text style={styles.scanCardSub}>Tap to activate camera &amp; analyze</Text>
+              <View style={styles.scanPills}>
+                <Pressable
+                  style={styles.manualPill}
+                  onPress={() => router.push({ pathname: '/scan', params: { manual: '1' } })}
+                >
+                  <MaterialIcons name="keyboard" size={18} color="#fff" />
+                  <Text style={styles.manualPillText}>Manual Barcode Entry</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.demoPill}
+                  onPress={() =>
+                    router.push({ pathname: '/result', params: { barcode: EXAMPLE_BARCODE } })
+                  }
+                >
+                  <MaterialIcons name="qr-code-scanner" size={18} color={COLORS.maroon} />
+                  <Text style={styles.demoPillText}>Try Nutella Demo</Text>
+                </Pressable>
+              </View>
+            </LinearGradient>
           </Pressable>
-
-          <Pressable
-            style={styles.manualButton}
-            onPress={() => router.push({ pathname: '/scan', params: { manual: '1' } })}
-          >
-            <MaterialIcons name="keyboard" size={20} color={COLORS.maroon} />
-            <Text style={styles.manualButtonText}>Manual Barcode Entry</Text>
-          </Pressable>
-
-          <TextButton
-            label="🍫 Try Nutella Demo"
-            onPress={() => router.push({ pathname: '/result', params: { barcode: EXAMPLE_BARCODE } })}
-          />
 
           {total30 > 0 ? (
             <>
-              <SectionTitle sub="Last 30 Days">Health Snapshot</SectionTitle>
+              <View style={styles.snapHeader}>
+                <Text style={styles.snapTitle}>Health Snapshot</Text>
+                <Text style={styles.snapSub}>Last 30 Days</Text>
+              </View>
               <View style={styles.statsRow}>
                 <View style={styles.stat}>
                   <MaterialIcons name="qr-code-scanner" size={22} color={COLORS.maroon} />
@@ -212,14 +246,20 @@ export default function Home() {
                   <Text style={styles.statLabel}>Total Scans</Text>
                 </View>
                 <View style={styles.stat}>
-                  <MaterialIcons name="speed" size={22} color={COLORS.maroon} />
-                  <Text style={styles.statValue}>{avg30} / 50</Text>
-                  <Text style={styles.statLabel}>{BANDS[bandForScore(avg30)].label}</Text>
+                  <MaterialIcons name="speed" size={22} color={COLORS.amber} />
+                  <Text style={styles.statValue}>
+                    {avg30}
+                    <Text style={styles.statUnit}> /50</Text>
+                  </Text>
+                  <Text style={[styles.statLabel, { color: BANDS[bandForScore(avg30)].color }]}>
+                    {SNAP_LABEL[bandForScore(avg30)]}
+                  </Text>
                 </View>
                 <View style={styles.stat}>
-                  <MaterialIcons name="verified" size={22} color={COLORS.maroon} />
+                  <MaterialIcons name="verified" size={22} color={COLORS.green} />
                   <Text style={styles.statValue}>
-                    {low30} / {lowPct30}%
+                    {low30}
+                    <Text style={[styles.statUnit, { color: COLORS.green }]}> {lowPct30}%</Text>
                   </Text>
                   <Text style={styles.statLabel}>Low-Risk</Text>
                 </View>
@@ -367,42 +407,86 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: '#fff', fontSize: 17, fontWeight: '800', fontFamily: FONTS.headline },
-  greeting: { fontSize: 26, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline, marginTop: 20 },
-  tipCard: { marginTop: 16, backgroundColor: COLORS.amberSoft, borderColor: '#F3D9A8' },
+  greeting: { fontSize: 26, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline, marginTop: 4 },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.maroon,
+    letterSpacing: 2,
+    fontFamily: FONTS.bodyBold,
+    marginTop: 20,
+  },
+  tipCard: { marginTop: 16, backgroundColor: COLORS.softBlue, borderColor: '#D8E4F8' },
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   tipTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
   tipBody: { fontSize: 14, color: COLORS.inkSoft, lineHeight: 20, marginTop: 8, fontFamily: FONTS.body },
-  scanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: COLORS.maroon,
-    borderRadius: 20,
-    paddingVertical: 20,
+  scanCardWrap: { marginTop: 20 },
+  scanCard: {
+    borderRadius: 24,
+    paddingVertical: 24,
     paddingHorizontal: 20,
-    marginTop: 20,
     shadowColor: COLORS.maroon,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
     elevation: 8,
   },
-  scanButtonText: { color: '#fff', fontSize: 19, fontWeight: '700', fontFamily: FONTS.headline },
-  scanButtonSub: { color: '#E8CF9F', fontSize: 13, marginTop: 2, fontFamily: FONTS.body },
-  scanArrow: { marginLeft: 'auto' },
-  manualButton: {
+  viewfinder: {
+    width: 200,
+    height: 130,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  corner: { position: 'absolute', width: 30, height: 30, borderColor: COLORS.amber },
+  cornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 4 },
+  cornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 4 },
+  cornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 4 },
+  cornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 4 },
+  scanIconWrap: { alignItems: 'center', justifyContent: 'center' },
+  scanline: {
+    position: 'absolute',
+    left: -14,
+    right: -14,
+    height: 2,
+    backgroundColor: '#F59E0B',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  scanCardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 },
+  scanCardTitle: { color: '#fff', fontSize: 22, fontWeight: '700', fontFamily: FONTS.headline },
+  scanCardSub: { color: '#E8CF9F', fontSize: 13, marginTop: 4, textAlign: 'center', fontFamily: FONTS.body },
+  scanPills: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  manualPill: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.card,
-    borderColor: COLORS.maroon,
-    borderWidth: 1.5,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 999,
-    paddingVertical: 13,
-    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
   },
-  manualButtonText: { color: COLORS.maroon, fontSize: 15, fontWeight: '700', fontFamily: FONTS.bodySemi },
+  manualPillText: { color: '#fff', fontSize: 13.5, fontWeight: '700', textAlign: 'center', fontFamily: FONTS.bodySemi },
+  demoPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: COLORS.amber,
+    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+  },
+  demoPillText: { color: COLORS.maroon, fontSize: 13.5, fontWeight: '700', textAlign: 'center', fontFamily: FONTS.bodySemi },
+  snapHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 26, marginBottom: 12 },
+  snapTitle: { fontSize: 20, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline },
+  snapSub: { fontSize: 12, color: COLORS.soft, fontFamily: FONTS.bodySemi },
   statsRow: { flexDirection: 'row', gap: 10 },
   stat: {
     flex: 1,
@@ -415,6 +499,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statValue: { color: COLORS.ink, fontSize: 20, fontWeight: '800', fontFamily: FONTS.headline },
+  statUnit: { fontSize: 13, fontWeight: '700', color: COLORS.soft, fontFamily: FONTS.bodySemi },
   statLabel: { color: COLORS.soft, fontSize: 12, fontFamily: FONTS.bodySemi },
   recentWrap: { marginTop: 24 },
   recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },

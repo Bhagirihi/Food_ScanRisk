@@ -77,6 +77,25 @@ Docs: https://docs.expo.dev/eas/index.md
 - Home Recent Scans: band-coloured icon tiles (no photos), "Scanned X ago"
   relative dates, "• N/50 LABEL" score pills (LOW/MOD/HIGH/V. HIGH),
   "View all N" link + full-width "View all N scans in History" button.
+- Home scan card (app/index.tsx): one dark-maroon gradient card
+  (GRADIENTS.hero) with gold corner brackets, glowing barcode icon +
+  scanline, "Scan Barcode →", Manual Barcode Entry + Try Nutella Demo pills
+  inside; the whole card asks for camera permission then opens the scanner.
+  Health Snapshot middle stat uses a short band label ("Moderate", not
+  "Moderate risk") via SNAP_LABEL.
+- History (app/history.tsx): Stitch "History Log" — bell + avatar top bar,
+  "{N} Scanned Items" + CLEAR HISTORY pill, one-row scrollable filter pills
+  (ScrollView MUST have flexGrow: 0 or it stretches to fill the screen),
+  rows with real thumbnails from the cached product (imageUrl; placeholder
+  tile when missing), relative dates ("Today 14:22" / "Yesterday" /
+  "N days ago"), note from first ingredients + top nutrient (underscores
+  stripped from OFF text), dark score pills, warning line from real top
+  factors (warningFor). Visual check: web preview can't fetch OFF images
+  (headless browser has no external network) — on a real phone they load.
+- Register (app/register.tsx): Stitch "Create Account" — title card, icon
+  fields with label rows, always-visible 4-segment strength meter + 3 check
+  pills, Terms as plain text with no links (docs don't exist), compact
+  SetupNotice (one-line, dismissible; full box stays on Login/Forgot).
 - Fixtures: scripts/fixtures/nutella.json = live 400g jar data (23 Moderate);
   nutella-mini.json = live 15g pack 80177173 (38 High — NOVA 4 + trans fat
   0.1g). The two packs are different OFF entries; the model is the same.

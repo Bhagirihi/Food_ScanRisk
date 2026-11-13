@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -31,12 +31,15 @@ export default function Register() {
   const passed = STRENGTH_CHECKS.filter((c) => c.test(password)).length;
   const strength =
     passed === 3
-      ? { label: 'OPTIMAL', color: COLORS.green }
+      ? { label: 'OPTIMAL', color: COLORS.green, pillBg: COLORS.paleGreen }
       : passed === 2
-        ? { label: 'Good', color: COLORS.amber }
+        ? { label: 'Good', color: COLORS.amberDeep, pillBg: COLORS.paleAmber }
         : passed === 1
-          ? { label: 'Fair', color: COLORS.amber }
-          : { label: 'Weak', color: COLORS.danger };
+          ? { label: 'Fair', color: COLORS.amberDeep, pillBg: COLORS.paleAmber }
+          : { label: 'Weak', color: COLORS.danger, pillBg: COLORS.dangerBg };
+  // 4 segments: all four fill only when every check passes.
+  const filledSegments = passed === 3 ? 4 : passed;
+  const segmentColor = passed === 3 ? COLORS.green : passed > 0 ? COLORS.amber : COLORS.line;
 
   const submit = async () => {
     setError('');
@@ -102,37 +105,72 @@ export default function Register() {
   }
 
   return (
-    <AuthShell title="Create an account" sub="Start making informed, healthy grocery choices today.">
-      {!isSupabaseConfigured ? <SetupNotice /> : null}
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.header}>
+          <Image source={require('../assets/icon.png')} style={styles.logo} />
+          <Text style={styles.brand}>ScanRisk</Text>
+        </View>
 
-      <Card>
-        <Text style={styles.label}>Full Name</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          autoCapitalize="words"
-          placeholderTextColor={COLORS.placeholder}
-        />
-        <Text style={styles.label}>Email Address</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholderTextColor={COLORS.placeholder}
-        />
-        <Text style={styles.label}>Password</Text>
-        <View style={styles.passwordRow}>
+        {!isSupabaseConfigured ? <SetupNotice compact /> : null}
+
+        <Card style={styles.titleCard}>
+          <Text style={styles.title}>Create Your ScanRisk Account</Text>
+          <Text style={styles.sub}>
+            Start making informed, healthy grocery choices today with real-time nutritional
+            intelligence.
+          </Text>
+        </Card>
+
+        <View style={[styles.fieldLabelRow, styles.firstField]}>
+          <Text style={styles.fieldLabel}>Full Name</Text>
+          <Text style={styles.fieldHint}>Required</Text>
+        </View>
+        <View style={styles.field}>
+          <MaterialIcons name="person-outline" size={20} color={COLORS.soft} />
           <TextInput
-            style={styles.passwordInput}
+            style={styles.fieldInput}
+            value={name}
+            onChangeText={setName}
+            placeholder="e.g. Sarah Jenkins"
+            autoCapitalize="words"
+            placeholderTextColor={COLORS.placeholder}
+          />
+        </View>
+
+        <View style={styles.fieldLabelRow}>
+          <Text style={styles.fieldLabel}>Email Address</Text>
+          <Text style={styles.fieldHint}>Institutional / Personal</Text>
+        </View>
+        <View style={styles.field}>
+          <MaterialIcons name="alternate-email" size={20} color={COLORS.soft} />
+          <TextInput
+            style={styles.fieldInput}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="sarah@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholderTextColor={COLORS.placeholder}
+          />
+        </View>
+
+        <View style={styles.fieldLabelRow}>
+          <Text style={styles.fieldLabel}>Password</Text>
+          <View style={[styles.strengthPill, { backgroundColor: strength.pillBg }]}>
+            <Text style={[styles.strengthPillText, { color: strength.color }]}>
+              {strength.label}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.field}>
+          <MaterialIcons name="lock-outline" size={20} color={COLORS.soft} />
+          <TextInput
+            style={styles.fieldInput}
             value={password}
             onChangeText={setPassword}
-            placeholder="At least 6 characters"
+            placeholder="••••••••"
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoCorrect={false}
@@ -147,34 +185,39 @@ export default function Register() {
           </Pressable>
         </View>
 
-        {password.length > 0 ? (
-          <View style={styles.strengthWrap}>
-            <View style={styles.strengthBars}>
-              {[0, 1, 2].map((i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.strengthBar,
-                    { backgroundColor: i < passed ? strength.color : COLORS.line },
-                  ]}
-                />
-              ))}
-            </View>
-            <Text style={[styles.strengthLabel, { color: strength.color }]}>{strength.label}</Text>
-            <View style={styles.checksRow}>
-              {STRENGTH_CHECKS.map((c) => (
-                <View key={c.id} style={styles.checkItem}>
-                  <MaterialIcons
-                    name={c.test(password) ? 'check-circle' : 'radio-button-unchecked'}
-                    size={16}
-                    color={c.test(password) ? COLORS.green : COLORS.soft}
-                  />
-                  <Text style={styles.checkText}>{c.label}</Text>
-                </View>
-              ))}
-            </View>
+        <View style={styles.strengthWrap}>
+          <View style={styles.strengthBars}>
+            {[0, 1, 2, 3].map((i) => (
+              <View
+                key={i}
+                style={[
+                  styles.strengthBar,
+                  { backgroundColor: i < filledSegments ? segmentColor : COLORS.line },
+                ]}
+              />
+            ))}
           </View>
-        ) : null}
+          <View style={styles.checksRow}>
+            {STRENGTH_CHECKS.map((c) => {
+              const ok = c.test(password);
+              return (
+                <View
+                  key={c.id}
+                  style={[styles.checkPill, { backgroundColor: ok ? COLORS.paleGreen : '#F1F5F9' }]}
+                >
+                  <MaterialIcons
+                    name={ok ? 'check-circle' : 'radio-button-unchecked'}
+                    size={16}
+                    color={ok ? COLORS.green : COLORS.soft}
+                  />
+                  <Text style={[styles.checkText, { color: ok ? COLORS.green : COLORS.inkSoft }]}>
+                    {c.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
 
         <Pressable style={styles.termsRow} onPress={() => setTerms((t) => !t)}>
           <MaterialIcons
@@ -191,55 +234,94 @@ export default function Register() {
         <View style={styles.buttonWrap}>
           <PrimaryButton
             label={busy ? 'Creating…' : 'Create Account'}
-            icon="lock-person"
+            icon="lock"
             onPress={submit}
             disabled={busy}
           />
         </View>
-      </Card>
 
-      <View style={styles.links}>
-        <TextButton label="Already have an account? Log in" onPress={() => router.replace('/login')} />
+        <View style={styles.signinRow}>
+          <Text style={styles.signinText}>Already an active subscriber? </Text>
+          <Pressable onPress={() => router.replace('/login')}>
+            <Text style={styles.signinLink}>Sign In</Text>
+          </Pressable>
+        </View>
         <TextButton label="Continue as guest" onPress={guest} />
-      </View>
-    </AuthShell>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  label: { fontSize: 14, fontWeight: '700', marginTop: 12, fontFamily: FONTS.bodySemi, color: COLORS.ink },
-  input: {
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.line,
-    borderRadius: 12,
-    borderWidth: 1,
-    fontSize: 16,
-    marginTop: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontFamily: FONTS.body,
-  },
-  passwordRow: {
+  safe: { flex: 1, backgroundColor: COLORS.bg },
+  content: { padding: 20, paddingBottom: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logo: { width: 44, height: 44, borderRadius: 12 },
+  brand: { fontSize: 24, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline },
+  titleCard: { marginTop: 20 },
+  title: { fontSize: 30, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline, lineHeight: 36 },
+  sub: { fontSize: 16, color: COLORS.inkSoft, marginTop: 10, lineHeight: 24, fontFamily: FONTS.body },
+  fieldLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderColor: COLORS.line,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 6,
-    paddingHorizontal: 12,
+    justifyContent: 'space-between',
+    marginTop: 20,
+    marginBottom: 8,
   },
-  passwordInput: { flex: 1, fontSize: 16, paddingVertical: 12, fontFamily: FONTS.body },
-  strengthWrap: { marginTop: 12 },
+  firstField: { marginTop: 24 },
+  fieldLabel: { fontSize: 15, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
+  fieldHint: { fontSize: 13, color: COLORS.soft, fontFamily: FONTS.body },
+  strengthPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  strengthPillText: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5, fontFamily: FONTS.bodyBold },
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: COLORS.card,
+    borderColor: COLORS.line,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    shadowColor: '#171321',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  fieldInput: { flex: 1, fontSize: 16, color: COLORS.ink, fontFamily: FONTS.body },
+  strengthWrap: { marginTop: 14 },
   strengthBars: { flexDirection: 'row', gap: 6 },
   strengthBar: { flex: 1, height: 6, borderRadius: 999 },
-  strengthLabel: { fontSize: 12, fontWeight: '800', letterSpacing: 1, marginTop: 6, fontFamily: FONTS.bodyBold },
-  checksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
-  checkItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  checkText: { fontSize: 12.5, color: COLORS.inkSoft, fontFamily: FONTS.bodySemi },
-  termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 16 },
-  termsText: { flex: 1, fontSize: 13.5, color: COLORS.inkSoft, lineHeight: 19, fontFamily: FONTS.body },
-  error: { color: COLORS.danger, fontSize: 13, marginTop: 10, fontFamily: FONTS.body },
-  buttonWrap: { marginTop: 18 },
-  links: { marginTop: 8 },
+  checksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  checkPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  checkText: { fontSize: 12.5, fontWeight: '600', fontFamily: FONTS.bodySemi },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: COLORS.softBlue,
+    borderRadius: 14,
+    marginTop: 20,
+    padding: 14,
+  },
+  termsText: { flex: 1, fontSize: 14, color: COLORS.inkSoft, lineHeight: 20, fontFamily: FONTS.body },
+  error: { color: COLORS.danger, fontSize: 13, marginTop: 12, fontFamily: FONTS.body },
+  buttonWrap: { marginTop: 20 },
+  signinRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 },
+  signinText: { fontSize: 14, color: COLORS.inkSoft, fontFamily: FONTS.body },
+  signinLink: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.ink,
+    textDecorationLine: 'underline',
+    fontFamily: FONTS.bodySemi,
+  },
 });
