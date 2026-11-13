@@ -81,7 +81,8 @@ Docs: https://docs.expo.dev/eas/index.md
   nutella-mini.json = live 15g pack 80177173 (38 High — NOVA 4 + trans fat
   0.1g). The two packs are different OFF entries; the model is the same.
 - Allergens: `src/lib/allergens.ts` (10 common allergens, AsyncStorage,
-  matched against OFF allergen tags on Result; picker in Profile).
+  matched against OFF allergen tags on Result; collapsible "Allergen
+  Alerts" row in Profile, collapsed by default, expands to the picker).
 - Settings: `src/lib/settings.ts` (torch default, Pro Tip dismissal,
   tips-enabled flag read by the Tour effects).
 - History export: per-row CSV via expo-file-system (cache dir) +
@@ -97,7 +98,9 @@ Docs: https://docs.expo.dev/eas/index.md
 - Flow: BrandedSplash (boot) -> onboarding (once) -> login/register/forgot
   (Supabase email+password, `src/lib/supabase.ts`) -> home. Guest mode when
   Supabase is unconfigured (`scanrisk:guest:v1`); profile has sign out,
-  replay onboarding, reset tips, clear history/cache.
+  replay onboarding, reset tips, clear history/cache, measured cache size
+  (`getProductCacheSizeBytes` in openfoodfacts.ts — real AsyncStorage bytes,
+  never a demo figure), custom maroon/grey toggles (no native Switch).
 - Coach marks: `src/components/Tour.tsx` (adapted from Shubh's Tour; measure
   targets via `Measurable` interface + callback refs — RN 0.88 types `View`
   as the component, not the instance, so `useRef<View>` does not typecheck).

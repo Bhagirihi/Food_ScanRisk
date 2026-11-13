@@ -65,3 +65,38 @@ export async function clearProductCache(): Promise<void> {
     // Ignore.
   }
 }
+
+/** UTF-8 byte length of a string (char length undercounts non-ASCII). */
+function utf8ByteLength(s: string): number {
+  let bytes = 0;
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    if (code < 0x80) bytes += 1;
+    else if (code < 0x800) bytes += 2;
+    else if (code >= 0xd800 && code < 0xdc00) {
+      bytes += 4;
+      i++;
+    } else bytes += 3;
+  }
+  return bytes;
+}
+
+/**
+ * Real measured size of the cached products in AsyncStorage, in bytes.
+ * Returns 0 when the cache is empty, null when it cannot be measured.
+ */
+export async function getProductCacheSizeBytes(): Promise<number | null> {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const cacheKeys = keys.filter((k) => k.startsWith(CACHE_KEY_PREFIX));
+    if (cacheKeys.length === 0) return 0;
+    const entries = await AsyncStorage.multiGet(cacheKeys);
+    let bytes = 0;
+    for (const [, value] of entries) {
+      if (value) bytes += utf8ByteLength(value);
+    }
+    return bytes;
+  } catch {
+    return null;
+  }
+}

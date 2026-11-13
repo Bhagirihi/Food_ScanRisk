@@ -78,6 +78,14 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
   banner. Home Recent Scans rebuilt to the Stitch spec: band-coloured icon
   tiles (no photos), "Scanned X ago", "• 8/50 LOW" score pills, "View all N"
   link + full-width "View all N scans in History" button.
+- Profile rebuilt to the Stitch "Profile Settings" frame: top bar with bell
+  + avatar, identity card (real name/email, "Member since" only from a real
+  account date, no Pro badge), pale stats card with dividers (real counts,
+  Clean Score amber, Allergens Tracked green), collapsible Allergen Alerts
+  row, preference rows with icon tiles + hand-built maroon/grey toggles,
+  data rows with real history count and measured cache size, About card with
+  real version v1.0.0 and an Open Source link only (no Privacy/Terms — those
+  docs don't exist; no fake "Database synced" line).
 - Scoring model unchanged. Nutella 400g jar (3017624010701) scores 23 Moderate
   (live data has no NOVA group, no trans fat); the 15g mini pack (80177173)
   scores 38 High (live data has NOVA 4 + trans fat 0.1g) — same model, two
