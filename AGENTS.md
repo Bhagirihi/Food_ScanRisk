@@ -79,10 +79,14 @@ Docs: https://docs.expo.dev/eas/index.md
   "View all N" link + full-width "View all N scans in History" button.
 - Home scan card (app/index.tsx): one dark-maroon gradient card
   (GRADIENTS.hero) with gold corner brackets, glowing barcode icon +
-  scanline, "Scan Barcode →", Manual Barcode Entry + Try Nutella Demo pills
-  inside; the whole card asks for camera permission then opens the scanner.
+  scanline, "Scan Barcode →", Manual Entry + Try Nutella pills inside (both
+  one line, fixed height 48 — the long "Manual Barcode Entry" / "Try Nutella
+  Demo" labels wrapped unevenly on his phone, one pill taller than the
+  other); the whole card asks for camera permission then opens the scanner.
   Health Snapshot middle stat uses a short band label ("Moderate", not
-  "Moderate risk") via SNAP_LABEL.
+  "Moderate risk") via SNAP_LABEL. No gear/settings icon is rendered
+  anywhere on Home (verified by grep — the floating gear in his 13 Nov
+  screenshot is a system/other-app button on his phone, not ours).
 - History (app/history.tsx): Stitch "History Log" — bell + avatar top bar,
   "{N} Scanned Items" + CLEAR HISTORY pill, one-row scrollable filter pills
   (ScrollView MUST have flexGrow: 0 or it stretches to fill the screen),
@@ -103,7 +107,52 @@ Docs: https://docs.expo.dev/eas/index.md
   matched against OFF allergen tags on Result; collapsible "Allergen
   Alerts" row in Profile, collapsed by default, expands to the picker).
 - Settings: `src/lib/settings.ts` (torch default, Pro Tip dismissal,
-  tips-enabled flag read by the Tour effects).
+  tips-enabled flag read by the Tour effects, last manually-entered barcode
+  for the scanner's manual card prefix).
+- Scanner (app/scan.tsx, rebuilt 13 Nov to the exact Stitch frame spec):
+  camera card at the top (marginHorizontal 16, rounded bottom corners 24,
+  content-driven height ~470 incl. the status-bar inset — NO fixed height),
+  dimmed photo under the overlay; top bar = X close (36px circle) left,
+  LIVE FOCUS pill absolutely centred, torch + flip (36px circles, gap 8)
+  right; gold brackets 294×174 (#D97706, 3px, 28px arms) with an orange
+  scanline (inset 8) + white center-focus icon at its middle; hint pill
+  (dark-maroon, document-scanner icon + text, centred); permissions pill
+  (full card width, shield + "Camera permission" + PERMISSIONS + tune icon,
+  opens the permission sheet); manual card (white, keyboard icon, "Enter
+  barcode / manually:" two lines, grey barcode fragment + real last-entered
+  7-digit prefix when one exists, never a fake number). Recent Ingredient
+  Analyses below on pale slate #F1F5F9 (COLORS.paleSlate): header + "Today",
+  two side-by-side real-product cards (48×48 thumbnail, name, dot +
+  top-factor subline — red text only for high/very-high). No bottom buttons,
+  no bottom nav — X is the exit. Permission sheet: drag handle, pale-blue
+  circle + maroon camera icon, centred honest body (no "inflammatory
+  additives" / "audit macro values" claims), lock info box, Allow Camera +
+  Open Settings both 56px tall radius 10, "Enter code manually instead"
+  link, no X. Manual sheet: barcode icon + title + X in a pale-grey circle,
+  left-aligned body, 48px input, 50px Verify Product radius 10. The
+  permission sheet is shared between the !granted full-screen state and the
+  pill-tapped overlay (Allow Camera hidden in the overlay — permission is
+  already granted there).
+- Alignment round (13 Nov): every screen re-rendered at 390×844 and fixed —
+  Home pills (above), Login guest title on one line (title 14px, badge 9.5px,
+  tile 38px, gap 9 — AuthShell content padding is 24, so the row only has
+  ~132px for the title), History brand line numberOfLines 1 (was 2 — a
+  2-line brand made one row taller than the rest), onboarding step-2 factor
+  labels use non-breaking spaces inside units (56.3 g, 100 g) so a wrap
+  never orphans a bare "g", splash stat labels are single words
+  (Additives / Nutrition / Allergens) with the stats row width 100% (the
+  row is content-sized inside a centred parent, so long labels shrank the
+  columns and the other labels wrapped). Screenshots live in
+  ~/workspace/scanrisk-webcheck4/shots/ (19 shots incl. the permission-sheet
+  overlay). Headless-Chrome note: /opt/meta-chromium/chrome refuses to start
+  here ("Hatch WebGL domain policy is required") — use the Playwright
+  headless shell at
+  ~/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+  on --remote-debugging-port=9222 instead. The in-page "Allow Camera"
+  button does not complete getUserMedia in that shell — grant the camera
+  with CDP Browser.grantPermissions (videoCapture) before loading /scan.
+  The wasm barcode-scanner error seen once in the preview console is
+  web-only; the native scanner is used on a real device.
 - History export: per-row CSV via expo-file-system (cache dir) +
   expo-sharing; per-row delete via `removeRecord` in `src/lib/history.ts`.
 - OAuth: Apple/Google via supabase signInWithOAuth + expo-web-browser

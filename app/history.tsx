@@ -164,7 +164,7 @@ function HistoryRow({
             </View>
           )}
           <View style={styles.rowText}>
-            <Text style={styles.rowBrand} numberOfLines={2}>
+            <Text style={styles.rowBrand} numberOfLines={1}>
               {(record.brand ?? 'Unknown brand').toUpperCase()} •{' '}
               {relativeHistoryDate(record.scannedAt)}
             </Text>

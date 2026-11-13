@@ -30,6 +30,7 @@ export const COLORS = {
   placeholder: '#9AA3B2',
   // Stitch spec colours for the Result stat tiles and Home Recent Scans.
   softBlue: '#EAF1FF',
+  paleSlate: '#F1F5F9',
   navy: '#1E293B',
   paleBlue: '#DBEAFE',
   paleRed: '#FEE2E2',

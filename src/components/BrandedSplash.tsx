@@ -60,15 +60,15 @@ export default function BrandedSplash() {
       <View style={styles.stats}>
         <View style={styles.stat}>
           <MaterialIcons name="science" size={18} color="#F5D98B" />
-          <Text style={styles.statText}>Additives checked</Text>
+          <Text style={styles.statText}>Additives</Text>
         </View>
         <View style={styles.stat}>
           <MaterialIcons name="restaurant" size={18} color="#F5D98B" />
-          <Text style={styles.statText}>Nutrition / 100 g</Text>
+          <Text style={styles.statText}>Nutrition</Text>
         </View>
         <View style={styles.stat}>
           <MaterialIcons name="verified" size={18} color="#F5D98B" />
-          <Text style={styles.statText}>Allergen alerts</Text>
+          <Text style={styles.statText}>Allergens</Text>
         </View>
       </View>
 
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: 6, borderRadius: 999, backgroundColor: COLORS.amber },
   sync: { color: '#E8CF9F', fontSize: 12, fontWeight: '700', letterSpacing: 1.5, marginTop: 10 },
-  stats: { flexDirection: 'row', gap: 20, marginTop: 36 },
+  stats: { flexDirection: 'row', gap: 20, marginTop: 36, width: '100%' },
   stat: { alignItems: 'center', gap: 6, flex: 1 },
   statText: { color: '#F5D98B', fontSize: 11.5, fontWeight: '600', textAlign: 'center', fontFamily: FONTS.bodySemi },
   foot: { position: 'absolute', bottom: 56 },

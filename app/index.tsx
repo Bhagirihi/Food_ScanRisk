@@ -218,7 +218,7 @@ export default function Home() {
                   onPress={() => router.push({ pathname: '/scan', params: { manual: '1' } })}
                 >
                   <MaterialIcons name="keyboard" size={18} color="#fff" />
-                  <Text style={styles.manualPillText}>Manual Barcode Entry</Text>
+                  <Text style={styles.manualPillText}>Manual Entry</Text>
                 </Pressable>
                 <Pressable
                   style={styles.demoPill}
@@ -227,7 +227,7 @@ export default function Home() {
                   }
                 >
                   <MaterialIcons name="qr-code-scanner" size={18} color={COLORS.maroon} />
-                  <Text style={styles.demoPillText}>Try Nutella Demo</Text>
+                  <Text style={styles.demoPillText}>Try Nutella</Text>
                 </Pressable>
               </View>
             </LinearGradient>
@@ -462,25 +462,25 @@ const styles = StyleSheet.create({
   scanPills: { flexDirection: 'row', gap: 10, marginTop: 20 },
   manualPill: {
     flex: 1,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 999,
-    paddingVertical: 12,
     paddingHorizontal: 10,
   },
   manualPillText: { color: '#fff', fontSize: 13.5, fontWeight: '700', textAlign: 'center', fontFamily: FONTS.bodySemi },
   demoPill: {
     flex: 1,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     backgroundColor: COLORS.amber,
     borderRadius: 999,
-    paddingVertical: 12,
     paddingHorizontal: 10,
   },
   demoPillText: { color: COLORS.maroon, fontSize: 13.5, fontWeight: '700', textAlign: 'center', fontFamily: FONTS.bodySemi },

@@ -182,7 +182,7 @@ export default function Login() {
         <View style={styles.instantBadge}>
           <Text style={styles.instantBadgeText}>INSTANT SCAN</Text>
         </View>
-        <MaterialIcons name="chevron-right" size={22} color={COLORS.soft} />
+        <MaterialIcons name="chevron-right" size={20} color={COLORS.soft} />
       </Pressable>
 
       <View style={styles.trustRow}>
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   guestRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 9,
     backgroundColor: COLORS.card,
     borderColor: COLORS.line,
     borderRadius: 16,
@@ -272,18 +272,18 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   guestIconTile: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: 12,
     backgroundColor: COLORS.maroonSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   guestText: { flex: 1 },
-  guestTitle: { fontSize: 15, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
+  guestTitle: { fontSize: 14, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
   guestSub: { fontSize: 12, color: COLORS.soft, marginTop: 2, lineHeight: 16, fontFamily: FONTS.body },
-  instantBadge: { backgroundColor: COLORS.amber, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
-  instantBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff', letterSpacing: 0.5, fontFamily: FONTS.bodyBold },
+  instantBadge: { backgroundColor: COLORS.amber, borderRadius: 999, paddingHorizontal: 5, paddingVertical: 4 },
+  instantBadgeText: { fontSize: 9.5, fontWeight: '800', color: '#fff', letterSpacing: 0.5, fontFamily: FONTS.bodyBold },
   trustRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20 },
   trustItem: { alignItems: 'center', gap: 4 },
   trustText: { fontSize: 11.5, color: COLORS.soft, fontFamily: FONTS.bodySemi },

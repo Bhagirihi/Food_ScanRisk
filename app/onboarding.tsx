@@ -89,8 +89,10 @@ function Visual({ kind, swap, selectedAllergens, nutella }: VisualProps) {
         <Text style={styles.visualCaption}>NUTELLA — REAL LABEL DATA</Text>
         {[
           { icon: 'fact-check', label: 'Nutri-Score E', pts: '+12 pts' },
-          { icon: 'water-drop', label: 'Very high sugar: 56.3 g / 100 g', pts: '+6 pts' },
-          { icon: 'opacity', label: 'Very high saturated fat: 10.6 g / 100 g', pts: '+5 pts' },
+          // Non-breaking spaces inside the units (56.3 g, 100 g) so a wrap
+          // never orphans a bare "g" on the second line.
+          { icon: 'water-drop', label: 'Very high sugar: 56.3\u00A0g / 100\u00A0g', pts: '+6 pts' },
+          { icon: 'opacity', label: 'Very high saturated fat: 10.6\u00A0g / 100\u00A0g', pts: '+5 pts' },
         ].map((f) => (
           <View key={f.label} style={styles.factorRow}>
             <MaterialIcons name={f.icon as never} size={20} color={COLORS.maroon} />

@@ -89,7 +89,8 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
 - Home rebuilt to the Stitch "Home Dashboard" frame: "NUTRITIONAL
   INTELLIGENCE" eyebrow, pale-blue Pro Tip card, one large dark-maroon
   gradient Scan card (gold corner brackets, glowing barcode icon + scanline,
-  "Scan Barcode →", Manual Barcode Entry + Try Nutella Demo pills inside),
+  "Scan Barcode →", Manual Entry + Try Nutella pills inside — both one line,
+  fixed 48px height, so the row stays level on every device),
   Health Snapshot with "Last 30 Days" and "18 /50" + short band label
   ("Moderate") and "98 69%" low-risk formats. No Pro pill (no Pro tier).
 - History rebuilt to the Stitch "History Log" frame: bell + avatar top bar,
@@ -122,6 +123,28 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
   23 Moderate → Menguy's Peanut 100% 5 Low (+18). The swap card also appears
   on the Result screen after a real scan (omitted when no lower-scoring
   alternative is found).
+- Alignment round (13 Nov): scanner rebuilt to the exact Stitch frame spec —
+  camera card (rounded bottom corners) with centred LIVE FOCUS pill between
+  the X close button and torch/flip, 294×174 gold brackets + orange scanline
+  with focus icon, centred hint pill with scanner icon, "Camera permission"
+  pill (shield + PERMISSIONS + tune icon), white manual-entry card (keyboard
+  icon, "Enter barcode / manually:", grey barcode fragment, real last-entered
+  prefix when one exists, never a fake number), Recent Ingredient Analyses
+  below on pale slate with two side-by-side real-product cards; no bottom
+  buttons, no bottom nav. Permission sheet rebuilt (drag handle, camera
+  circle, honest body, on-device info box, Allow Camera + Open Settings at
+  the same 56px height, "Enter code manually instead" link, no X); manual
+  sheet rebuilt (barcode icon + title + X in a grey circle, left-aligned
+  body, 48px input, 50px Verify Product button, radius 10). Home scan-card
+  pills shortened to "Manual Entry" / "Try Nutella" and fixed to 48px so
+  they stay level (the long labels wrapped unevenly on his phone). Login
+  guest title fits on one line; History brand line truncates to one line;
+  onboarding factor labels use non-breaking spaces in units so a wrap never
+  orphans a bare "g"; splash stat labels are single words ("Additives",
+  "Nutrition", "Allergens") on one shared baseline. The floating gear icon
+  in his Home screenshot is NOT rendered by the app (no settings icon
+  anywhere in app/src — verified by grep) — it is a system/other-app
+  floating button on his phone.
 - Scoring model unchanged. Nutella 400g jar (3017624010701) scores 23 Moderate
   (live data has no NOVA group, no trans fat); the 15g mini pack (80177173)
   scores 38 High (live data has NOVA 4 + trans fat 0.1g) — same model, two
