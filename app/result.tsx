@@ -19,6 +19,7 @@ import { hasSeenTip, markTipSeen } from '../src/lib/tips';
 import { getTipsEnabled } from '../src/lib/settings';
 import { getSelectedAllergens, matchedAllergens, type Allergen } from '../src/lib/allergens';
 import { getCachedProduct, lookupBarcode, setCachedProduct } from '../src/lib/openfoodfacts';
+import { findSmartSwap, type SmartSwap } from '../src/lib/smartSwap';
 import { CONCERN_ADDITIVES, scoreProduct, type RiskFactor, type RiskResult } from '../src/lib/risk';
 import type { OffProduct } from '../src/lib/offParse';
 import { saveScan } from '../src/lib/history';
@@ -149,6 +150,7 @@ export default function Result() {
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [displayName, setDisplayName] = useState('Guest');
   const [savedBanner, setSavedBanner] = useState(false);
+  const [swap, setSwap] = useState<SmartSwap | null>(null);
   const [imageFailed, setImageFailed] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const containerRef = useRef<Measurable | null>(null);
@@ -163,6 +165,7 @@ export default function Result() {
     setRisk(null);
     setImageFailed(false);
     setSavedBanner(false);
+    setSwap(null);
   }
 
   useEffect(() => {
@@ -219,6 +222,17 @@ export default function Result() {
       alive = false;
     };
   }, [barcode, reload]);
+
+  useEffect(() => {
+    if (!product) return;
+    let alive = true;
+    findSmartSwap(product).then((s) => {
+      if (alive) setSwap(s);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [product]);
 
   useFocusEffect(
     useCallback(() => {
@@ -516,6 +530,33 @@ export default function Result() {
                 </Text>
               ) : null}
 
+              {swap ? (
+                <>
+                  <SectionTitle>Smart Swap</SectionTitle>
+                  <Card style={styles.swapCard}>
+                    <View style={styles.swapRow}>
+                      <View style={styles.swapText}>
+                        <Text style={styles.swapLabel}>A BETTER OPTION IN THE SAME CATEGORY</Text>
+                        <Text style={styles.swapName}>{swap.product.name}</Text>
+                        <Text style={styles.swapMeta}>
+                          {swap.product.brands ? `${swap.product.brands} • ` : ''}
+                          {swap.score} / 50 {BANDS[swap.band].label}
+                        </Text>
+                      </View>
+                      <View style={styles.swapBoost}>
+                        <Text style={styles.swapBoostText}>+{swap.boost} Score Boost</Text>
+                      </View>
+                    </View>
+                    <TextButton
+                      label="View this swap"
+                      onPress={() =>
+                        router.push({ pathname: '/result', params: { barcode: swap.product.barcode } })
+                      }
+                    />
+                  </Card>
+                </>
+              ) : null}
+
               <View style={styles.nutriHeader}>
                 <View>
                   <Text style={styles.nutriTitle}>Nutrition Facts</Text>
@@ -728,6 +769,14 @@ const styles = StyleSheet.create({
   factorTag: { fontSize: 11, color: COLORS.soft, fontFamily: FONTS.bodySemi },
   zeroText: { color: COLORS.inkSoft, fontSize: 14, lineHeight: 20, fontFamily: FONTS.body },
   extraNote: { color: COLORS.soft, fontSize: 13, lineHeight: 19, marginTop: 2, fontFamily: FONTS.body },
+  swapCard: { marginTop: 4 },
+  swapRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  swapText: { flex: 1 },
+  swapLabel: { fontSize: 11, fontWeight: '800', color: COLORS.amberDeep, letterSpacing: 0.8, fontFamily: FONTS.bodyBold },
+  swapName: { fontSize: 17, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline, marginTop: 6 },
+  swapMeta: { fontSize: 13.5, color: COLORS.inkSoft, marginTop: 3, fontFamily: FONTS.bodySemi },
+  swapBoost: { backgroundColor: COLORS.green, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  swapBoostText: { color: '#fff', fontSize: 12, fontWeight: '800', fontFamily: FONTS.bodyBold },
   nutriHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 26, marginBottom: 12 },
   nutriTitle: { fontSize: 20, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline },
   nutriSub: { fontSize: 13, color: COLORS.soft, marginTop: 4, fontFamily: FONTS.body },

@@ -21,6 +21,8 @@ export interface OffProduct {
   quantity?: string;
   /** Short food category, e.g. 'Spreads' — first non-generic en: categories tag. */
   category?: string;
+  /** Raw category slug, e.g. 'spreads' — used for same-category search. */
+  categoryTag?: string;
   /** Nutri-Score grade 'a'..'e', lowercase. Undefined when not available. */
   nutriscoreGrade?: string;
   /** NOVA processing group 1..4. Null when unknown. */
@@ -70,17 +72,20 @@ const GENERIC_CATEGORY_TAGS = new Set([
   'groceries',
 ]);
 
-/** First usable 'en:' categories tag, prettified: 'sweet-spreads' -> 'Sweet Spreads'. */
-function categoryFromTags(v: unknown): string | undefined {
+/** First usable 'en:' categories tag: prettified label + raw slug. */
+function categoryFromTags(v: unknown): { label: string; tag: string } | undefined {
   if (!Array.isArray(v)) return undefined;
   for (const raw of v) {
     if (typeof raw !== 'string' || !raw.startsWith('en:')) continue;
     const label = raw.slice(3);
     if (!label || GENERIC_CATEGORY_TAGS.has(label.toLowerCase())) continue;
-    return label
-      .split('-')
-      .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
-      .join(' ');
+    return {
+      tag: label,
+      label: label
+        .split('-')
+        .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+        .join(' '),
+    };
   }
   return undefined;
 }
@@ -94,6 +99,7 @@ export function parseOffProduct(code: string, json: any): LookupResult {
   const p = json.product;
   const nutriments = p.nutriments ?? {};
   const sodium = num(nutriments['sodium_100g']);
+  const category = categoryFromTags(p.categories_tags);
   const product: OffProduct = {
     barcode: code,
     name:
@@ -102,7 +108,8 @@ export function parseOffProduct(code: string, json: any): LookupResult {
         : `Product ${code}`,
     brands: typeof p.brands === 'string' ? p.brands : undefined,
     quantity: typeof p.quantity === 'string' ? p.quantity : undefined,
-    category: categoryFromTags(p.categories_tags),
+    category: category?.label,
+    categoryTag: category?.tag,
     nutriscoreGrade:
       typeof p.nutriscore_grade === 'string' ? p.nutriscore_grade.toLowerCase() : undefined,
     novaGroup: typeof p.nova_group === 'number' ? p.nova_group : null,

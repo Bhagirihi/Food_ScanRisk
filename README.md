@@ -109,7 +109,19 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
   with NO links (the docs don't exist yet), maroon Create Account button,
   "Already an active subscriber? Sign In" + "Continue as guest". The
   SetupNotice on Register is a small dismissible one-line note; Login /
-  Forgot keep the full box.
+  Forgot now use the same small one-line note.
+- Remaining-UI round (13 Nov): splash bars fixed to fit the 112px logo box
+  (were 176px wide in a 96px box) in-app and in the regenerated native
+  splash.png (no orange rules); Login + Forgot got Register's treatment
+  (compact notice, icon fields, "Forgot password?" beside the password
+  field, "Continue as Guest" row with INSTANT SCAN badge); onboarding step 2
+  gained a real Smart Swap card and step 3 a real Personal Allergen Shield
+  card; scanner overlay tightened. Smart Swap (`src/lib/smartSwap.ts`)
+  searches Open Food Facts for same-category products, scores each with our
+  model, and shows the best lower-scoring alternative — live test: Nutella
+  23 Moderate → Menguy's Peanut 100% 5 Low (+18). The swap card also appears
+  on the Result screen after a real scan (omitted when no lower-scoring
+  alternative is found).
 - Scoring model unchanged. Nutella 400g jar (3017624010701) scores 23 Moderate
   (live data has no NOVA group, no trans fat); the 15g mini pack (80177173)
   scores 38 High (live data has NOVA 4 + trans fat 0.1g) — same model, two

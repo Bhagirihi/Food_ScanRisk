@@ -11,6 +11,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, FONTS, GRADIENTS } from '../lib/theme';
 
 const BARS = [3, 2, 6, 2, 3, 8, 2, 4, 3, 2, 6, 3];
+// Bars must fit INSIDE the logo box: 44 units * 1.5 + 11 gaps * 2 = 88px
+// inside a 112px box (12px padding each side). The old w*3/gap-4 bars were
+// 176px wide in a 96px box and overflowed ~40px on each side.
 
 export default function BrandedSplash() {
   const [pulse] = useState(() => new Animated.Value(0.6));
@@ -35,8 +38,8 @@ export default function BrandedSplash() {
               <View
                 key={i}
                 style={{
-                  width: w * 3,
-                  height: i % 3 === 0 ? 56 : 42,
+                  width: w * 1.5,
+                  height: i % 3 === 0 ? 64 : 48,
                   backgroundColor: COLORS.amber,
                 }}
               />
@@ -79,9 +82,9 @@ export default function BrandedSplash() {
 const styles = StyleSheet.create({
   root: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   logoBox: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
+    width: 112,
+    height: 112,
+    borderRadius: 28,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
@@ -91,7 +94,7 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 12,
   },
-  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 2 },
   name: {
     color: '#fff',
     fontSize: 38,

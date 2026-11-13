@@ -55,11 +55,12 @@ export default function ForgotPassword() {
 
   return (
     <AuthShell title="Reset Password" sub="Enter the email associated with your ScanRisk account and we will send a secure link to reset your password.">
-      {!isSupabaseConfigured ? <SetupNotice /> : null}
+      {!isSupabaseConfigured ? <SetupNotice compact /> : null}
 
       <Card>
         <Text style={styles.label}>Registered Account Email</Text>
         <View style={styles.emailRow}>
+          <MaterialIcons name="mail-outline" size={20} color={COLORS.soft} />
           <TextInput
             style={styles.emailInput}
             value={email}
@@ -98,6 +99,7 @@ const styles = StyleSheet.create({
   emailRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
     backgroundColor: COLORS.white,
     borderColor: COLORS.line,
     borderRadius: 12,

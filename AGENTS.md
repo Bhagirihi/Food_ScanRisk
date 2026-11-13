@@ -135,3 +135,25 @@ Docs: https://docs.expo.dev/eas/index.md
 - Home asks for the camera on tapping Scan (useCameraPermissions in index);
   the scan screen keeps the fallback and offers Open Settings when the
   permission is permanently denied (canAskAgain false).
+
+- Remaining UI fixes (13 Nov): splash bars fixed to fit the logo box
+  (BrandedSplash 112px box, bars w*1.5 gap 2 = 88px; native splash.png
+  regenerated with white 360x360 box, bars fitted, no orange rules).
+  Login/Forgot use the same compact dismissible SetupNotice as Register;
+  Login has icon fields, "Forgot password?" beside the password label, and
+  the guest row with INSTANT SCAN badge. Smart Swap is real:
+  `src/lib/smartSwap.ts` searches OFF by category (v2 search API, category
+  facet fallback), scores with `src/lib/risk.ts`, returns the lowest scorer
+  below the original; tested by `scripts/test-smart-swap.mjs` (offline +
+  live; Nutella -> Menguy's Peanut 100% 5/50, +18). Onboarding step 2 shows
+  the swap card only when a real alternative is found; step 3 shows the
+  Personal Allergen Shield from real selections. Result screen has a Smart
+  Swap section (omitted when none found). Scanner overlay: flex-start +
+  gap 18, bottomRow marginTop auto (camera not verifiable in web preview).
+- Web preview: `expo export --platform web` needs react-dom 19.3.0 to match
+  react 19.3.0 (19.3.1 breaks with React error #527); pin it in the
+  DISPOSABLE copy only. Serve dist with an SPA-fallback server (plain
+  python http.server 404s on /login etc.); see webcheck3/serve.mjs.
+  The headless browser has no external network, so live OFF lookups fail in
+  the preview — swap card / allergen verdicts render their omit-or-fallback
+  states there; verify those paths with the node tests instead.

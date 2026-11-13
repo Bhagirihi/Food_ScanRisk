@@ -7,7 +7,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase';
 import { setGuest } from '../src/lib/session';
 import { COLORS, FONTS } from '../src/lib/theme';
-import { Card, OutlinedButton, PrimaryButton, TextButton } from '../src/components/ui';
+import { Card, PrimaryButton, TextButton } from '../src/components/ui';
 import { AuthShell } from '../src/components/AuthShell';
 import { SetupNotice } from '../src/components/SetupNotice';
 
@@ -100,22 +100,31 @@ export default function Login() {
 
   return (
     <AuthShell title="Welcome Back" sub="Sign in to access your saved food scans, allergen alerts, and risk logs.">
-      {!isSupabaseConfigured ? <SetupNotice /> : null}
+      {!isSupabaseConfigured ? <SetupNotice compact /> : null}
 
       <Card>
         <Text style={styles.label}>Email Address</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholderTextColor={COLORS.placeholder}
-        />
-        <Text style={styles.label}>Password</Text>
+        <View style={styles.field}>
+          <MaterialIcons name="mail-outline" size={20} color={COLORS.soft} />
+          <TextInput
+            style={styles.fieldInput}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholderTextColor={COLORS.placeholder}
+          />
+        </View>
+        <View style={styles.passwordLabelRow}>
+          <Text style={styles.label}>Password</Text>
+          <Pressable onPress={() => router.push('/forgot-password')}>
+            <Text style={styles.forgotLink}>Forgot password?</Text>
+          </Pressable>
+        </View>
         <View style={styles.passwordRow}>
+          <MaterialIcons name="lock-outline" size={20} color={COLORS.soft} />
           <TextInput
             style={styles.passwordInput}
             value={password}
@@ -143,7 +152,6 @@ export default function Login() {
             disabled={busy}
           />
         </View>
-        <TextButton label="Forgot password?" onPress={() => router.push('/forgot-password')} />
       </Card>
 
       <View style={styles.divider}>
@@ -163,12 +171,19 @@ export default function Login() {
         </Pressable>
       </View>
 
-      <OutlinedButton
-        label="Continue as Guest"
-        icon="qr-code-scanner"
-        onPress={guest}
-        style={styles.guestButton}
-      />
+      <Pressable style={styles.guestRow} onPress={guest} accessibilityLabel="Continue as guest">
+        <View style={styles.guestIconTile}>
+          <MaterialIcons name="qr-code-scanner" size={22} color={COLORS.maroon} />
+        </View>
+        <View style={styles.guestText}>
+          <Text style={styles.guestTitle}>Continue as Guest</Text>
+          <Text style={styles.guestSub}>Instant barcode analysis • No account required</Text>
+        </View>
+        <View style={styles.instantBadge}>
+          <Text style={styles.instantBadgeText}>INSTANT SCAN</Text>
+        </View>
+        <MaterialIcons name="chevron-right" size={22} color={COLORS.soft} />
+      </Pressable>
 
       <View style={styles.trustRow}>
         <View style={styles.trustItem}>
@@ -194,20 +209,30 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '700', marginTop: 12, fontFamily: FONTS.bodySemi, color: COLORS.ink },
-  input: {
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     backgroundColor: COLORS.white,
     borderColor: COLORS.line,
     borderRadius: 12,
     borderWidth: 1,
-    fontSize: 16,
     marginTop: 6,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    fontFamily: FONTS.body,
   },
+  fieldInput: { flex: 1, fontSize: 16, fontFamily: FONTS.body },
+  passwordLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  forgotLink: { fontSize: 13, fontWeight: '700', color: COLORS.maroon, fontFamily: FONTS.bodySemi },
   passwordRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
     backgroundColor: COLORS.white,
     borderColor: COLORS.line,
     borderRadius: 12,
@@ -235,7 +260,30 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   socialText: { fontSize: 15, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
-  guestButton: { marginTop: 12 },
+  guestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.card,
+    borderColor: COLORS.line,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 12,
+    padding: 14,
+  },
+  guestIconTile: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: COLORS.maroonSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestText: { flex: 1 },
+  guestTitle: { fontSize: 15, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
+  guestSub: { fontSize: 12, color: COLORS.soft, marginTop: 2, lineHeight: 16, fontFamily: FONTS.body },
+  instantBadge: { backgroundColor: COLORS.amber, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
+  instantBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff', letterSpacing: 0.5, fontFamily: FONTS.bodyBold },
   trustRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20 },
   trustItem: { alignItems: 'center', gap: 4 },
   trustText: { fontSize: 11.5, color: COLORS.soft, fontFamily: FONTS.bodySemi },

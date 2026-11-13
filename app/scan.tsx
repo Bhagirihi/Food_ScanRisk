@@ -291,7 +291,8 @@ const styles = StyleSheet.create({
   permissionButtons: { marginTop: 20, width: '100%' },
   overlay: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    gap: 18,
     paddingBottom: 28,
     paddingTop: 12,
     paddingHorizontal: 20,
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
   todayDot: { width: 8, height: 8, borderRadius: 4 },
   todayName: { flex: 1, color: '#fff', fontSize: 13.5, fontWeight: '600', fontFamily: FONTS.bodySemi },
   todayFlag: { color: '#F5D98B', fontSize: 12, fontFamily: FONTS.body },
-  bottomRow: { flexDirection: 'row', gap: 12, justifyContent: 'center' },
+  bottomRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', marginTop: 'auto' },
   overlayButton: {
     flexDirection: 'row',
     alignItems: 'center',
