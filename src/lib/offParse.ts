@@ -19,6 +19,8 @@ export interface OffProduct {
   name: string;
   brands?: string;
   quantity?: string;
+  /** Short food category, e.g. 'Spreads' — first non-generic en: categories tag. */
+  category?: string;
   /** Nutri-Score grade 'a'..'e', lowercase. Undefined when not available. */
   nutriscoreGrade?: string;
   /** NOVA processing group 1..4. Null when unknown. */
@@ -56,6 +58,33 @@ function tagList(v: unknown, upper: boolean): string[] {
     .map((x) => (upper ? x.toUpperCase() : x));
 }
 
+/** Meal-type tags are not a food category ('breakfasts' is when you eat it). */
+const GENERIC_CATEGORY_TAGS = new Set([
+  'breakfasts',
+  'snacks',
+  'foods',
+  'beverages',
+  'meals',
+  'desserts',
+  'dishes',
+  'groceries',
+]);
+
+/** First usable 'en:' categories tag, prettified: 'sweet-spreads' -> 'Sweet Spreads'. */
+function categoryFromTags(v: unknown): string | undefined {
+  if (!Array.isArray(v)) return undefined;
+  for (const raw of v) {
+    if (typeof raw !== 'string' || !raw.startsWith('en:')) continue;
+    const label = raw.slice(3);
+    if (!label || GENERIC_CATEGORY_TAGS.has(label.toLowerCase())) continue;
+    return label
+      .split('-')
+      .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+      .join(' ');
+  }
+  return undefined;
+}
+
 /**
  * Parse one Open Food Facts /api/v2/product/<barcode>.json response.
  * A missing product is HTTP 200 with `status: 0` — never a 404.
@@ -73,6 +102,7 @@ export function parseOffProduct(code: string, json: any): LookupResult {
         : `Product ${code}`,
     brands: typeof p.brands === 'string' ? p.brands : undefined,
     quantity: typeof p.quantity === 'string' ? p.quantity : undefined,
+    category: categoryFromTags(p.categories_tags),
     nutriscoreGrade:
       typeof p.nutriscore_grade === 'string' ? p.nutriscore_grade.toLowerCase() : undefined,
     novaGroup: typeof p.nova_group === 'number' ? p.nova_group : null,

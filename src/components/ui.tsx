@@ -82,6 +82,22 @@ export function OutlinedButton({ label, onPress, disabled, icon, style }: Button
   );
 }
 
+/** Soft pill button — pale blue-grey fill, dark navy text (Stitch secondary action). */
+export function SoftButton({ label, onPress, disabled, icon, style }: ButtonProps) {
+  return (
+    <Pressable
+      style={[styles.softButton, disabled && styles.disabled, style]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <View style={styles.buttonRow}>
+        {icon ? <MaterialIcons name={icon} size={20} color={COLORS.navy} /> : null}
+        <Text style={styles.softButtonText}>{label}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 /** Plain maroon text button. */
 export function TextButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
@@ -153,6 +169,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   outlinedButtonText: { color: COLORS.maroon, fontSize: 16, fontWeight: '700', fontFamily: FONTS.bodySemi },
+  softButton: {
+    alignItems: 'center',
+    backgroundColor: COLORS.softBlue,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  softButtonText: { color: COLORS.navy, fontSize: 16, fontWeight: '700', fontFamily: FONTS.bodySemi },
   disabled: { opacity: 0.5 },
   textButton: { alignItems: 'center', paddingVertical: 10 },
   textButtonText: { color: COLORS.maroon, fontSize: 15, fontWeight: '700', fontFamily: FONTS.bodySemi },

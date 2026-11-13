@@ -13,20 +13,28 @@ import { bandForScore, scoreProduct } from '../.tmp-test/risk.js';
 const nutellaJson = JSON.parse(
   readFileSync(new URL('./fixtures/nutella.json', import.meta.url), 'utf8'),
 );
+const nutellaMiniJson = JSON.parse(
+  readFileSync(new URL('./fixtures/nutella-mini.json', import.meta.url), 'utf8'),
+);
 
-// 1. Parse the real Nutella response (captured live 13 Nov 2026).
+// 1. Parse the real Nutella 400g jar response (captured live 13 Nov 2026).
+//    The live entry has no NOVA group and no trans-fat value, so those score 0.
 const parsed = parseOffProduct('3017624010701', nutellaJson);
 assert.equal(parsed.status, 'found');
 const nutella = parsed.product;
 assert.equal(nutella.name, 'Nutella');
 assert.equal(nutella.brands, 'Ferrero');
+assert.equal(nutella.quantity, '400.0 g');
+assert.equal(nutella.category, 'Spreads');
 assert.equal(nutella.nutriscoreGrade, 'e');
 assert.equal(nutella.novaGroup, null);
 assert.equal(nutella.nutriments.sugars100, 56.3);
 assert.equal(nutella.nutriments.salt100, 0.1075);
 assert.equal(nutella.nutriments.saturatedFat100, 10.6);
+assert.equal(nutella.nutriments.transFat100, undefined);
 assert.deepEqual(nutella.allergens, ['nuts']);
 assert.deepEqual(nutella.additives, []);
+assert.ok(nutella.imageUrl?.startsWith('https://images.openfoodfacts.org/'));
 
 // 1b. Salt falls back to sodium x 2.5 when salt_100g is missing.
 const salty = parseOffProduct('9', {
@@ -41,12 +49,44 @@ assert.deepEqual(parseOffProduct('00000000', { status: 0, product: null }), {
   status: 'not-found',
 });
 
-// 3. Nutella score: Nutri-Score E +12, NOVA unknown 0, sugar 56.3g +6,
-//    salt 0.1075g 0, saturated fat 10.6g +5, additives 0 = 23, moderate.
+// 3. Nutella 400g jar score: Nutri-Score E +12, NOVA unknown 0, sugar 56.3g +6,
+//    salt 0.1075g 0, saturated fat 10.6g +5, no trans fat, additives 0 = 23, moderate.
 const nutellaRisk = scoreProduct(nutella);
 assert.equal(nutellaRisk.score, 23);
 assert.equal(nutellaRisk.band, 'moderate');
 assert.equal(nutellaRisk.factors.length, 3);
+assert.deepEqual(
+  nutellaRisk.factors.map((f) => `${f.label} +${f.points}`),
+  ['Nutri-Score E +12', 'Very high sugar: 56.3g per 100g +6', 'Very high saturated fat: 10.6g per 100g +5'],
+);
+
+// 3b. The 15g mini pack (barcode 80177173) is a DIFFERENT Open Food Facts
+//     entry: same per-100g nutrition, but its live data carries NOVA 4 and
+//     trans fat 0.1g — so the same model scores it 38, high. This is the pack
+//     the user scanned on his phone (38/50, "15.0 g", EAN 80177173).
+const miniParsed = parseOffProduct('80177173', nutellaMiniJson);
+assert.equal(miniParsed.status, 'found');
+const mini = miniParsed.product;
+assert.equal(mini.name, 'Nutella');
+assert.equal(mini.quantity, '15.0 g');
+assert.equal(mini.category, 'Spreads');
+assert.equal(mini.novaGroup, 4);
+assert.equal(mini.nutriments.transFat100, 0.1);
+assert.equal(mini.nutriments.sugars100, 56.3);
+const miniRisk = scoreProduct(mini);
+assert.equal(miniRisk.score, 38);
+assert.equal(miniRisk.band, 'high');
+assert.equal(miniRisk.factors.length, 5);
+assert.deepEqual(
+  miniRisk.factors.map((f) => `${f.label} +${f.points}`),
+  [
+    'Nutri-Score E +12',
+    'Ultra-processed +10',
+    'Very high sugar: 56.3g per 100g +6',
+    'Very high saturated fat: 10.6g per 100g +5',
+    'Contains trans fat: 0.1g per 100g +5',
+  ],
+);
 
 // 4. Clean product scores 0 / low with full data quality.
 const clean = {
@@ -103,10 +143,18 @@ assert.equal(bandForScore(50), 'very-high');
 
 console.log('All risk/offParse tests passed.');
 console.log(
-  'Nutella:',
+  'Nutella 400g jar:',
   JSON.stringify({
     score: nutellaRisk.score,
     band: nutellaRisk.band,
     factors: nutellaRisk.factors.map((f) => `${f.label} +${f.points}`),
+  }),
+);
+console.log(
+  'Nutella 15g mini pack:',
+  JSON.stringify({
+    score: miniRisk.score,
+    band: miniRisk.band,
+    factors: miniRisk.factors.map((f) => `${f.label} +${f.points}`),
   }),
 );

@@ -11,7 +11,7 @@ import { Card, SectionTitle, TextButton, Toast } from '../src/components/ui';
 import { hasSeenTip, markTipSeen } from '../src/lib/tips';
 import { getProTipDismissed, getTipsEnabled, setProTipDismissed } from '../src/lib/settings';
 import { getHistory, type ScanRecord } from '../src/lib/history';
-import { BANDS, bandForScore } from '../src/lib/risk';
+import { BANDS, bandForScore, type RiskBand } from '../src/lib/risk';
 import { getSession } from '../src/lib/supabase';
 import { isGuest } from '../src/lib/session';
 import { COLORS, FONTS } from '../src/lib/theme';
@@ -28,6 +28,35 @@ const HOW_IT_WORKS = [
   { label: 'Trans fat', pts: '+5' },
   { label: 'Additives of concern', pts: 'up to +6' },
 ] as const;
+
+/** "2h ago" / "yesterday" / "3 days ago" — the Recent Scans date line. */
+function relativeScanTime(scannedAt: number): string {
+  const secs = Math.max(0, Math.floor((Date.now() - scannedAt) / 1000));
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'yesterday';
+  return `${days} days ago`;
+}
+
+/** Left icon tile per band: pale blue tile + leaf for low/moderate, pale red + warning for high. */
+const RECENT_TILE: Record<RiskBand, { bg: string; icon: keyof typeof MaterialIcons.glyphMap; color: string }> = {
+  low: { bg: COLORS.paleBlue, icon: 'eco', color: COLORS.green },
+  moderate: { bg: COLORS.paleBlue, icon: 'eco', color: COLORS.amberMid },
+  high: { bg: COLORS.paleRed, icon: 'warning', color: COLORS.danger },
+  'very-high': { bg: COLORS.paleRed, icon: 'warning', color: COLORS.danger },
+};
+
+/** Score pill per band: dot + "8/50 LOW" — abbreviated label, same colour throughout. */
+const RECENT_PILL: Record<RiskBand, { bg: string; color: string; label: string }> = {
+  low: { bg: COLORS.paleGreen, color: COLORS.green, label: 'LOW' },
+  moderate: { bg: COLORS.paleAmber, color: COLORS.amberBrown, label: 'MOD' },
+  high: { bg: COLORS.paleRed, color: COLORS.danger, label: 'HIGH' },
+  'very-high': { bg: COLORS.paleRed, color: COLORS.danger, label: 'V. HIGH' },
+};
 
 export default function Home() {
   const [records, setRecords] = useState<ScanRecord[]>([]);
@@ -199,41 +228,60 @@ export default function Home() {
           ) : null}
 
           {recent.length > 0 ? (
-            <View ref={(node) => { recentRef.current = node; }}>
-              <SectionTitle>Recent Scans</SectionTitle>
-              {recent.map((r) => (
-                <Pressable
-                  key={`${r.barcode}-${r.scannedAt}`}
-                  style={styles.row}
-                  onPress={() => router.push({ pathname: '/result', params: { barcode: r.barcode } })}
-                >
-                  <View style={styles.rowText}>
-                    <Text style={styles.rowName} numberOfLines={1}>
-                      {r.name}
-                    </Text>
-                    <Text style={styles.rowMeta}>
-                      {r.brand ? `${r.brand} · ` : ''}
-                      {new Date(r.scannedAt).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </Text>
-                  </View>
-                  <View style={[styles.chip, { backgroundColor: BANDS[r.band].color }]}>
-                    <Text style={styles.chipText}>{r.score}</Text>
-                  </View>
+            <View ref={(node) => { recentRef.current = node; }} style={styles.recentWrap}>
+              <View style={styles.recentHeader}>
+                <View style={styles.recentTitleWrap}>
+                  <MaterialIcons name="history" size={18} color={COLORS.navy} />
+                  <Text style={styles.recentTitle}>Recent Scans</Text>
+                </View>
+                <Pressable style={styles.viewAllLink} onPress={() => router.push('/history')}>
+                  <Text style={styles.viewAllLinkText}>View all {records.length}</Text>
+                  <MaterialIcons name="chevron-right" size={16} color={COLORS.navy} />
                 </Pressable>
-              ))}
-              <TextButton label="View all scans in History →" onPress={() => router.push('/history')} />
+              </View>
+              {recent.map((r) => {
+                const tile = RECENT_TILE[r.band];
+                const pill = RECENT_PILL[r.band];
+                return (
+                  <Pressable
+                    key={`${r.barcode}-${r.scannedAt}`}
+                    style={styles.recentRow}
+                    onPress={() => router.push({ pathname: '/result', params: { barcode: r.barcode } })}
+                  >
+                    <View style={[styles.recentTile, { backgroundColor: tile.bg }]}>
+                      <MaterialIcons name={tile.icon} size={22} color={tile.color} />
+                    </View>
+                    <View style={styles.recentText}>
+                      <Text style={styles.recentName} numberOfLines={1}>
+                        {r.name}
+                      </Text>
+                      <Text style={styles.recentDate}>Scanned {relativeScanTime(r.scannedAt)}</Text>
+                    </View>
+                    <View style={[styles.scorePill, { backgroundColor: pill.bg }]}>
+                      <View style={[styles.scoreDot, { backgroundColor: pill.color }]} />
+                      <Text style={[styles.scorePillText, { color: pill.color }]}>
+                        {r.score}/50 {pill.label}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+              <Pressable style={styles.viewAllButton} onPress={() => router.push('/history')}>
+                <Text style={styles.viewAllButtonText}>
+                  View all {records.length} scans in History
+                </Text>
+                <MaterialIcons name="arrow-forward" size={18} color={COLORS.navy} />
+              </Pressable>
             </View>
-          ) : (
-            <TextButton label="Scan history →" onPress={() => router.push('/history')} />
-          )}
+          ) : null}
 
           <Card style={styles.howCard}>
             <Pressable style={styles.howHeader} onPress={() => setExpanded((e) => !e)}>
-              <MaterialIcons name="science" size={22} color={COLORS.maroon} />
-              <Text style={styles.howTitle}>How Risk Scores Work</Text>
+              <MaterialIcons name="science" size={22} color={COLORS.maroon} style={styles.howIcon} />
+              <View style={styles.howTitleWrap}>
+                <Text style={styles.howTitle}>How Risk Scores Work</Text>
+                <Text style={styles.howSub}>How we score 0–50 from the label</Text>
+              </View>
               <MaterialIcons
                 name={expanded ? 'expand-less' : 'expand-more'}
                 size={24}
@@ -368,30 +416,51 @@ const styles = StyleSheet.create({
   },
   statValue: { color: COLORS.ink, fontSize: 20, fontWeight: '800', fontFamily: FONTS.headline },
   statLabel: { color: COLORS.soft, fontSize: 12, fontFamily: FONTS.bodySemi },
-  row: {
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderColor: COLORS.line,
-    borderRadius: 16,
-    borderWidth: 1,
+  recentWrap: { marginTop: 24 },
+  recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  recentTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  recentTitle: { fontSize: 16, fontWeight: '700', color: COLORS.navy, fontFamily: FONTS.headline },
+  viewAllLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  viewAllLinkText: { fontSize: 12, fontWeight: '700', color: COLORS.navy, fontFamily: FONTS.bodyBold },
+  recentRow: {
     flexDirection: 'row',
-    marginBottom: 10,
-    padding: 14,
-  },
-  rowText: { flex: 1, marginRight: 12 },
-  rowName: { fontSize: 16, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
-  rowMeta: { color: COLORS.soft, fontSize: 13, marginTop: 3, fontFamily: FONTS.body },
-  chip: {
     alignItems: 'center',
-    borderRadius: 999,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
+    gap: 12,
+    backgroundColor: COLORS.card,
+    borderColor: '#E2E8F0',
+    borderRadius: 15,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#171321',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  chipText: { color: '#fff', fontSize: 17, fontWeight: '800', fontFamily: FONTS.bodyBold },
+  recentTile: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  recentText: { flex: 1 },
+  recentName: { fontSize: 15, fontWeight: '600', color: '#0F172A', fontFamily: FONTS.bodySemi },
+  recentDate: { fontSize: 12, color: COLORS.soft, marginTop: 2, fontFamily: FONTS.body },
+  scorePill: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 24, borderRadius: 999, paddingHorizontal: 9 },
+  scoreDot: { width: 6, height: 6, borderRadius: 3 },
+  scorePillText: { fontSize: 11.5, fontWeight: '800', fontFamily: FONTS.bodyBold },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: COLORS.softBlue,
+    borderRadius: 13,
+    height: 44,
+  },
+  viewAllButtonText: { fontSize: 13.5, fontWeight: '600', color: COLORS.navy, fontFamily: FONTS.bodySemi },
   howCard: { marginTop: 12 },
-  howHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  howTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline },
+  howHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  howIcon: { marginTop: 2 },
+  howTitleWrap: { flex: 1 },
+  howTitle: { fontSize: 16, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline },
+  howSub: { fontSize: 12, color: COLORS.soft, marginTop: 2, fontFamily: FONTS.body },
   howBody: { marginTop: 14 },
   howText: { color: COLORS.inkSoft, fontSize: 14, lineHeight: 20, fontFamily: FONTS.body },
   howRow: {

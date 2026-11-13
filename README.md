@@ -71,8 +71,18 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
   amber #D97706, Plus Jakarta Sans + Inter, pill buttons, bottom tabs,
   SVG risk gauge, allergen alerts, history search/filters/CSV export,
   password strength meter, Apple/Google sign-in). App name stays ScanRisk.
-- Scoring model unchanged — Nutella still 23 Moderate.
-- Code on GitHub: Bhagirihi/Food_ScanRisk, branch `main` (v2 not pushed yet).
+- Result screen rebuilt to the Stitch "Product Analysis Detail" frame:
+  needle-dial gauge ("Metabolic Risk Index" + band pill), label-top stat
+  tiles, factor cards with category tags, 2x2 nutrition grid with kcal pill,
+  bolded allergens in ingredients, persistent "Saved to your scan history"
+  banner. Home Recent Scans rebuilt to the Stitch spec: band-coloured icon
+  tiles (no photos), "Scanned X ago", "• 8/50 LOW" score pills, "View all N"
+  link + full-width "View all N scans in History" button.
+- Scoring model unchanged. Nutella 400g jar (3017624010701) scores 23 Moderate
+  (live data has no NOVA group, no trans fat); the 15g mini pack (80177173)
+  scores 38 High (live data has NOVA 4 + trans fat 0.1g) — same model, two
+  different packs. Both are covered by node tests.
+- Code on GitHub: Bhagirihi/Food_ScanRisk, branch `main`.
 - v1 code-complete, typecheck + Android export + expo-doctor 20/20 green.
 - NOT phone-tested yet. No EAS build yet.
 - Sign-in needs Supabase project keys (guest mode works without them);

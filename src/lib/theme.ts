@@ -28,6 +28,15 @@ export const COLORS = {
   goodBg: '#E7F4EA',
   white: '#FFFFFF',
   placeholder: '#9AA3B2',
+  // Stitch spec colours for the Result stat tiles and Home Recent Scans.
+  softBlue: '#EAF1FF',
+  navy: '#1E293B',
+  paleBlue: '#DBEAFE',
+  paleRed: '#FEE2E2',
+  paleGreen: '#DCFCE7',
+  paleAmber: '#FEF3C7',
+  amberBrown: '#92400E',
+  amberMid: '#B45309',
 };
 
 // Font family names registered by @expo-google-fonts. If a font fails to

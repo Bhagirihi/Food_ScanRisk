@@ -63,7 +63,23 @@ Docs: https://docs.expo.dev/eas/index.md
   on Home/History/Profile, NOT expo-router Tabs.
 - SafeAreaView: every screen is wrapped with ALL edges (no Stack headers
   remain to cover the top inset).
-- Gauge: semi-circular arc via react-native-svg (`src/components/ScoreGauge.tsx`).
+- Gauge: needle dial via react-native-svg (`src/components/ScoreGauge.tsx`) —
+  fixed green→yellow→orange→red gradient arc, tick marks, needle pivoting at
+  the diameter line, number + "RISK SCORE" below the dial. The
+  "Metabolic Risk Index" card title + band pill live in app/result.tsx.
+- Result (app/result.tsx): Stitch "Product Analysis Detail" — header avatar,
+  persistent "Saved to your scan history" banner (dismiss with X), product
+  card with quantity badge + brand/category eyebrow (category = first
+  non-generic en: categories tag, parsed in offParse.ts), label-top stat
+  tiles, factor cards with category tags, 2x2 nutrition grid with kcal pill,
+  ingredients with bolded allergens, missing-data box naming only genuinely
+  missing fields. Share Score is the pale-blue SoftButton (ui.tsx).
+- Home Recent Scans: band-coloured icon tiles (no photos), "Scanned X ago"
+  relative dates, "• N/50 LABEL" score pills (LOW/MOD/HIGH/V. HIGH),
+  "View all N" link + full-width "View all N scans in History" button.
+- Fixtures: scripts/fixtures/nutella.json = live 400g jar data (23 Moderate);
+  nutella-mini.json = live 15g pack 80177173 (38 High — NOVA 4 + trans fat
+  0.1g). The two packs are different OFF entries; the model is the same.
 - Allergens: `src/lib/allergens.ts` (10 common allergens, AsyncStorage,
   matched against OFF allergen tags on Result; picker in Profile).
 - Settings: `src/lib/settings.ts` (torch default, Pro Tip dismissal,
