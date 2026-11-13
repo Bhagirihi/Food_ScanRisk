@@ -35,6 +35,10 @@ export interface OffProduct {
   allergens: string[];
   traces: string[];
   imageUrl?: string;
+  /** Serving size as printed on the label, e.g. '30 g'. */
+  servingSize?: string;
+  /** Serving size in grams, parsed from serving_quantity / serving_size. */
+  servingQuantityG?: number;
 }
 
 export type LookupResult =
@@ -90,6 +94,28 @@ function categoryFromTags(v: unknown): { label: string; tag: string } | undefine
   return undefined;
 }
 
+/** Per-serving nutrient from its per-100g value and the serving size. */
+export function perServing(value100: number | undefined, servingQuantityG: number | undefined): number | undefined {
+  if (value100 == null || servingQuantityG == null) return undefined;
+  return (value100 * servingQuantityG) / 100;
+}
+
+/**
+ * Serving size in grams. Prefers the numeric `serving_quantity` field;
+ * falls back to parsing the printed `serving_size` string ("30 g", "2.5 kg",
+ * "15g"). Undefined when the product reports no usable serving size.
+ */
+function servingQuantityGrams(p: any): number | undefined {
+  const q = num(p.serving_quantity);
+  if (q != null && q > 0) return q;
+  if (typeof p.serving_size !== 'string') return undefined;
+  const m = p.serving_size.match(/([\d.,]+)\s*(kg|g)\b/i);
+  if (!m) return undefined;
+  const v = parseFloat(m[1].replace(',', '.'));
+  if (!Number.isFinite(v) || v <= 0) return undefined;
+  return m[2].toLowerCase() === 'kg' ? v * 1000 : v;
+}
+
 /**
  * Parse one Open Food Facts /api/v2/product/<barcode>.json response.
  * A missing product is HTTP 200 with `status: 0` — never a 404.
@@ -129,6 +155,8 @@ export function parseOffProduct(code: string, json: any): LookupResult {
     allergens: tagList(p.allergens_tags, false),
     traces: tagList(p.traces_tags, false),
     imageUrl: typeof p.image_url === 'string' ? p.image_url : undefined,
+    servingSize: typeof p.serving_size === 'string' ? p.serving_size : undefined,
+    servingQuantityG: servingQuantityGrams(p),
   };
   return { status: 'found', product };
 }

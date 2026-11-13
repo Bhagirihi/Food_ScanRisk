@@ -219,16 +219,26 @@ export default function Register() {
           </View>
         </View>
 
-        <Pressable style={styles.termsRow} onPress={() => setTerms((t) => !t)}>
-          <MaterialIcons
-            name={terms ? 'check-box' : 'check-box-outline-blank'}
-            size={24}
-            color={terms ? COLORS.maroon : COLORS.soft}
-          />
+        <View style={styles.termsRow}>
+          <Pressable onPress={() => setTerms((t) => !t)} accessibilityRole="checkbox" accessibilityState={{ checked: terms }}>
+            <MaterialIcons
+              name={terms ? 'check-box' : 'check-box-outline-blank'}
+              size={24}
+              color={terms ? COLORS.maroon : COLORS.soft}
+            />
+          </Pressable>
           <Text style={styles.termsText}>
-            I agree to the Terms of Service and Privacy Policy.
+            I agree to the{' '}
+            <Text style={styles.termsLink} onPress={() => router.push('/terms')}>
+              Terms of Service
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.termsLink} onPress={() => router.push('/privacy')}>
+              Privacy Policy
+            </Text>
+            .
           </Text>
-        </Pressable>
+        </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <View style={styles.buttonWrap}>
@@ -313,6 +323,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   termsText: { flex: 1, fontSize: 14, color: COLORS.inkSoft, lineHeight: 20, fontFamily: FONTS.body },
+  termsLink: { color: COLORS.navy, fontWeight: '700', textDecorationLine: 'underline', fontFamily: FONTS.bodySemi },
   error: { color: COLORS.danger, fontSize: 13, marginTop: 12, fontFamily: FONTS.body },
   buttonWrap: { marginTop: 20 },
   signinRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 },

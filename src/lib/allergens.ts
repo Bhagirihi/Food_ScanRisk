@@ -4,25 +4,10 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export interface Allergen {
-  id: string;
-  label: string;
-  /** Lowercase substrings matched against the product's OFF allergen labels. */
-  tags: string[];
-}
+import { ALLERGENS, type Allergen } from './allergenData';
 
-export const ALLERGENS: Allergen[] = [
-  { id: 'gluten', label: 'Gluten', tags: ['gluten', 'wheat', 'barley', 'rye'] },
-  { id: 'dairy', label: 'Dairy', tags: ['milk', 'dairy', 'lactose', 'whey', 'casein', 'butter', 'cream', 'cheese'] },
-  { id: 'nuts', label: 'Nuts', tags: ['nuts', 'hazelnut', 'almond', 'walnut', 'cashew', 'pistachio'] },
-  { id: 'peanuts', label: 'Peanuts', tags: ['peanut'] },
-  { id: 'soy', label: 'Soy', tags: ['soy', 'soya'] },
-  { id: 'egg', label: 'Egg', tags: ['egg'] },
-  { id: 'fish', label: 'Fish', tags: ['fish'] },
-  { id: 'sesame', label: 'Sesame', tags: ['sesame'] },
-  { id: 'mustard', label: 'Mustard', tags: ['mustard'] },
-  { id: 'celery', label: 'Celery', tags: ['celery'] },
-];
+export { ALLERGENS, allergensForRegion } from './allergenData';
+export type { Allergen } from './allergenData';
 
 const KEY = 'scanrisk:allergens:v1';
 

@@ -4,7 +4,9 @@
 // tiles and custom toggles, data & storage rows, About card. All numbers
 // are real (history count, low-risk share, selected allergens, measured
 // cache size); nothing here is demo data — no Pro badge, no fake sync line,
-// no invented build number, no Privacy/Terms links (those docs don't exist).
+// no invented build number. The allergen picker shows the region's set
+// (FDA 9 for US/CA, full list + Shellfish elsewhere), and About links to
+// the in-app Privacy Policy and Terms of Service.
 
 import { useCallback, useState } from 'react';
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -19,7 +21,16 @@ import { getSession, signOut } from '../src/lib/supabase';
 import { clearGuest, clearOnboarding, isGuest } from '../src/lib/session';
 import { clearHistory, getHistory } from '../src/lib/history';
 import { clearProductCache, getProductCacheSizeBytes } from '../src/lib/openfoodfacts';
-import { getSelectedAllergens, setSelectedAllergens, ALLERGENS } from '../src/lib/allergens';
+import { getSelectedAllergens, setSelectedAllergens, allergensForRegion } from '../src/lib/allergens';
+import { ALL_REGIONS, REGION_LABELS, getRegion, setRegion, type RegionInfo } from '../src/lib/region';
+import {
+  cancelWeeklySummary,
+  getNotificationPermissionGranted,
+  getWeeklySummaryEnabled,
+  refreshWeeklySummary,
+  requestNotificationPermission,
+  setWeeklySummaryEnabled,
+} from '../src/lib/weeklySummary';
 import {
   getTipsEnabled,
   getTorchDefault,
@@ -53,6 +64,9 @@ export default function Profile() {
   const [cacheSizeBytes, setCacheSizeBytes] = useState<number | null>(null);
   const [torchDefault, setTorchDefaultState] = useState(false);
   const [tipsEnabled, setTipsEnabledState] = useState(true);
+  const [region, setRegionState] = useState<RegionInfo | null>(null);
+  const [regionExpanded, setRegionExpanded] = useState(false);
+  const [weeklySummary, setWeeklySummaryState] = useState(false);
 
   const load = useCallback(() => {
     Promise.all([
@@ -63,7 +77,9 @@ export default function Profile() {
       getTorchDefault(),
       getTipsEnabled(),
       getProductCacheSizeBytes(),
-    ]).then(([s, g, history, selected, torch, tips, cacheBytes]) => {
+      getRegion(),
+      getWeeklySummaryEnabled(),
+    ]).then(([s, g, history, selected, torch, tips, cacheBytes, reg, weekly]) => {
       setSession(s);
       setGuestState(g);
       setScanCount(history.length);
@@ -76,6 +92,8 @@ export default function Profile() {
       setTorchDefaultState(torch);
       setTipsEnabledState(tips);
       setCacheSizeBytes(cacheBytes);
+      setRegionState(reg);
+      setWeeklySummaryState(weekly);
     });
   }, []);
 
@@ -143,7 +161,38 @@ export default function Profile() {
     showToast('Settings updated');
   };
 
-  const selectedLabels = ALLERGENS.filter((a) => allergens.includes(a.id)).map((a) => a.label);
+  // Turning the summary on is user-initiated, so asking for permission here
+  // is allowed. A system denial keeps the toggle off with a toast.
+  const onWeeklySummaryToggle = async (value: boolean) => {
+    if (value) {
+      let granted = await getNotificationPermissionGranted();
+      if (!granted) granted = await requestNotificationPermission();
+      if (!granted) {
+        showToast('Notifications are off — turn them on in your phone settings');
+        return;
+      }
+      setWeeklySummaryState(true);
+      await setWeeklySummaryEnabled(true);
+      await refreshWeeklySummary();
+      showToast('Weekly summary on — Sundays at 9:00');
+    } else {
+      setWeeklySummaryState(false);
+      await setWeeklySummaryEnabled(false);
+      await cancelWeeklySummary();
+      showToast('Weekly summary off');
+    }
+  };
+
+  const onRegionSelect = async (code: (typeof ALL_REGIONS)[number]) => {
+    const info: RegionInfo = { region: code, label: REGION_LABELS[code], source: 'manual' };
+    setRegionState(info);
+    setRegionExpanded(false);
+    await setRegion(info);
+    showToast(`Region set to ${info.label}`);
+  };
+
+  const regionAllergens = allergensForRegion(region?.region ?? 'ROW');
+  const selectedLabels = regionAllergens.filter((a) => allergens.includes(a.id)).map((a) => a.label);
   const cacheSizeText = cacheSizeBytes != null && cacheSizeBytes > 0 ? formatBytes(cacheSizeBytes) : null;
 
   return (
@@ -212,6 +261,48 @@ export default function Profile() {
         <Card style={styles.rowCard}>
           <Pressable
             style={styles.row}
+            onPress={() => setRegionExpanded((e) => !e)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: regionExpanded }}
+          >
+            <IconTile bg={COLORS.paleBlue} color={COLORS.navy} icon="location-on" />
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>Your region</Text>
+              <Text style={styles.rowSub} numberOfLines={2}>
+                {region
+                  ? `${region.label}${region.source === 'location' ? ' — from your location' : region.source === 'locale' ? ' — from your device language' : ''}`
+                  : 'Not set — tap to choose'}
+              </Text>
+            </View>
+            <MaterialIcons
+              name={regionExpanded ? 'expand-less' : 'expand-more'}
+              size={24}
+              color={COLORS.soft}
+            />
+          </Pressable>
+          {regionExpanded ? (
+            <View style={styles.expanded}>
+              {ALL_REGIONS.map((code) => (
+                <Pressable key={code} style={styles.checkRow} onPress={() => onRegionSelect(code)}>
+                  <MaterialIcons
+                    name={region?.region === code ? 'radio-button-checked' : 'radio-button-unchecked'}
+                    size={24}
+                    color={region?.region === code ? COLORS.maroon : COLORS.soft}
+                  />
+                  <Text style={styles.checkLabel}>{REGION_LABELS[code]}</Text>
+                </Pressable>
+              ))}
+              <Text style={styles.expandedNote}>
+                Your region sets the allergen list, nutrition units and future Pro
+                prices. Only the country/region is stored — never your precise location.
+              </Text>
+            </View>
+          ) : null}
+        </Card>
+
+        <Card style={styles.rowCard}>
+          <Pressable
+            style={styles.row}
             onPress={() => setAllergensExpanded((e) => !e)}
             accessibilityRole="button"
             accessibilityState={{ expanded: allergensExpanded }}
@@ -233,7 +324,7 @@ export default function Profile() {
           </Pressable>
           {allergensExpanded ? (
             <View style={styles.expanded}>
-              {ALLERGENS.map((a) => (
+              {regionAllergens.map((a) => (
                 <Pressable key={a.id} style={styles.checkRow} onPress={() => toggleAllergen(a.id)}>
                   <MaterialIcons
                     name={allergens.includes(a.id) ? 'check-box' : 'check-box-outline-blank'}
@@ -288,6 +379,16 @@ export default function Profile() {
               </Text>
             </View>
             <CustomToggle value={torchDefault} onChange={onTorchToggle} />
+          </View>
+          <View style={[styles.row, styles.rowDivider]}>
+            <IconTile bg={COLORS.paleBlue} color={COLORS.navy} icon="notifications" />
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>Weekly scan summary</Text>
+              <Text style={styles.rowSub}>
+                Sunday 9:00 — scans, average score, low-risk count, from your own history
+              </Text>
+            </View>
+            <CustomToggle value={weeklySummary} onChange={onWeeklySummaryToggle} />
           </View>
         </Card>
 
@@ -358,6 +459,20 @@ export default function Profile() {
               <Text style={styles.sizePillText}>{APP_VERSION}</Text>
             </View>
           </View>
+          <Pressable
+            style={[styles.linkRow, styles.rowDivider]}
+            onPress={() => router.push('/privacy')}
+          >
+            <Text style={styles.linkText}>Privacy Policy</Text>
+            <MaterialIcons name="chevron-right" size={18} color={COLORS.soft} />
+          </Pressable>
+          <Pressable
+            style={[styles.linkRow, styles.rowDivider]}
+            onPress={() => router.push('/terms')}
+          >
+            <Text style={styles.linkText}>Terms of Service</Text>
+            <MaterialIcons name="chevron-right" size={18} color={COLORS.soft} />
+          </Pressable>
           <Pressable
             style={[styles.linkRow, styles.rowDivider]}
             onPress={() => Linking.openURL(REPO_URL)}

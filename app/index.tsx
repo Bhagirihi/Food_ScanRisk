@@ -15,6 +15,13 @@ import { getHistory, type ScanRecord } from '../src/lib/history';
 import { BANDS, bandForScore, type RiskBand } from '../src/lib/risk';
 import { getSession } from '../src/lib/supabase';
 import { isGuest } from '../src/lib/session';
+import {
+  markNotificationPromptAsked,
+  refreshWeeklySummary,
+  requestNotificationPermission,
+  setWeeklySummaryEnabled,
+  wasNotificationPromptAsked,
+} from '../src/lib/weeklySummary';
 import { COLORS, FONTS, GRADIENTS } from '../src/lib/theme';
 
 const EXAMPLE_BARCODE = '3017624010701';
@@ -72,6 +79,7 @@ export default function Home() {
   const [snapshotNow, setSnapshotNow] = useState(0);
   const [displayName, setDisplayName] = useState('Guest');
   const [proTipVisible, setProTipVisible] = useState(false);
+  const [notifCardVisible, setNotifCardVisible] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [toast, setToast] = useState('');
   const [expanded, setExpanded] = useState(false);
@@ -100,6 +108,13 @@ export default function Home() {
       Promise.all([hasSeenTip('home'), getTipsEnabled()]).then(([seen, enabled]) => {
         if (alive && !seen && enabled) timer = setTimeout(() => setShowTour(true), 700);
       });
+      // One-shot notification ask: show the explainer card only until it has
+      // been answered once. Recompute the weekly summary on every entry so
+      // its numbers never go stale.
+      wasNotificationPromptAsked().then((asked) => {
+        if (alive && !asked) setNotifCardVisible(true);
+      });
+      void refreshWeeklySummary();
       return () => {
         alive = false;
         if (timer) clearTimeout(timer);
@@ -129,6 +144,26 @@ export default function Home() {
   const dismissProTip = async () => {
     setProTipVisible(false);
     await setProTipDismissed();
+  };
+
+  // Notification explainer card: Allow triggers the system sheet once.
+  // A denial is recorded and never re-asked here — Profile has the toggle.
+  const allowNotifications = async () => {
+    setNotifCardVisible(false);
+    await markNotificationPromptAsked();
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      await setWeeklySummaryEnabled(true);
+      await refreshWeeklySummary();
+      showToast('Weekly summary on — Sundays at 9:00');
+    } else {
+      showToast('Notifications are off — you can turn them on in Profile');
+    }
+  };
+
+  const dismissNotifCard = async () => {
+    setNotifCardVisible(false);
+    await markNotificationPromptAsked();
   };
 
   const recent30 = records.filter((r) => snapshotNow - r.scannedAt < THIRTY_DAYS_MS);
@@ -183,6 +218,30 @@ export default function Home() {
               <Text style={styles.tipBody}>
                 Hold steady 4–6 inches from the barcode in good light for fast recognition.
               </Text>
+            </Card>
+          ) : null}
+
+          {notifCardVisible ? (
+            <Card style={styles.notifCard}>
+              <View style={styles.tipRow}>
+                <MaterialIcons name="notifications" size={22} color={COLORS.maroon} />
+                <Text style={styles.tipTitle}>Weekly scan summary</Text>
+                <Pressable onPress={dismissNotifCard} accessibilityLabel="Not now">
+                  <MaterialIcons name="close" size={20} color={COLORS.soft} />
+                </Pressable>
+              </View>
+              <Text style={styles.tipBody}>
+                Get a short summary every Sunday at 9:00 — scans this week, average
+                score, low-risk count. It is built on your phone from your own scans.
+              </Text>
+              <View style={styles.notifActions}>
+                <Pressable style={styles.notifAllow} onPress={allowNotifications}>
+                  <Text style={styles.notifAllowText}>Allow</Text>
+                </Pressable>
+                <Pressable style={styles.notifLater} onPress={dismissNotifCard}>
+                  <Text style={styles.notifLaterText}>Not now</Text>
+                </Pressable>
+              </View>
             </Card>
           ) : null}
 
@@ -417,6 +476,28 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   tipCard: { marginTop: 16, backgroundColor: COLORS.softBlue, borderColor: '#D8E4F8' },
+  notifCard: { marginTop: 16, backgroundColor: COLORS.amberSoft, borderColor: '#F3DFC0' },
+  notifActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  notifAllow: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: COLORS.maroon,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notifAllowText: { color: '#fff', fontSize: 15, fontWeight: '700', fontFamily: FONTS.bodySemi },
+  notifLater: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: COLORS.card,
+    borderColor: COLORS.line,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notifLaterText: { color: COLORS.ink, fontSize: 15, fontWeight: '700', fontFamily: FONTS.bodySemi },
   tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   tipTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
   tipBody: { fontSize: 14, color: COLORS.inkSoft, lineHeight: 20, marginTop: 8, fontFamily: FONTS.body },

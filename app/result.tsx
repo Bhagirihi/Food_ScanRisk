@@ -22,6 +22,9 @@ import { getCachedProduct, lookupBarcode, setCachedProduct } from '../src/lib/op
 import { findSmartSwap, type SmartSwap } from '../src/lib/smartSwap';
 import { CONCERN_ADDITIVES, scoreProduct, type RiskFactor, type RiskResult } from '../src/lib/risk';
 import type { OffProduct } from '../src/lib/offParse';
+import { perServing } from '../src/lib/offParse';
+import { getRegion } from '../src/lib/region';
+import type { RegionCode } from '../src/lib/regionInfer';
 import { saveScan } from '../src/lib/history';
 import { getSession } from '../src/lib/supabase';
 import { isGuest } from '../src/lib/session';
@@ -148,6 +151,7 @@ export default function Result() {
   const [product, setProduct] = useState<OffProduct | null>(null);
   const [risk, setRisk] = useState<RiskResult | null>(null);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [region, setRegion] = useState<RegionCode>('ROW');
   const [displayName, setDisplayName] = useState('Guest');
   const [savedBanner, setSavedBanner] = useState(false);
   const [swap, setSwap] = useState<SmartSwap | null>(null);
@@ -170,6 +174,9 @@ export default function Result() {
 
   useEffect(() => {
     getSelectedAllergens().then(setSelectedAllergens);
+    getRegion().then((r) => {
+      if (r) setRegion(r.region);
+    });
   }, []);
 
   useEffect(() => {
@@ -307,19 +314,26 @@ export default function Result() {
   }
 
   const n = product?.nutriments;
+  // US/CA show per-serving values first (the label format shoppers there
+  // know); everywhere else per-100g stays primary. The risk score is
+  // unaffected — it always uses per-100g (see src/lib/risk.ts).
+  const servingG = product?.servingQuantityG;
+  const servingFirst = (region === 'US' || region === 'CA') && servingG != null;
+  const disp = (v100?: number): number | undefined =>
+    servingFirst ? perServing(v100, servingG) : v100;
   const nutriTiles: { label: string; value: string; sub?: string; dot: string }[] = product
     ? [
         {
           label: 'Total Fat',
-          value: fmtG(n?.fat100),
+          value: fmtG(disp(n?.fat100)),
           sub:
-            n?.saturatedFat100 != null ? `Sat. Fat: ${fmt(n.saturatedFat100)}g` : undefined,
+            n?.saturatedFat100 != null ? `Sat. Fat: ${fmt(disp(n.saturatedFat100))}g` : undefined,
           dot: n?.saturatedFat100 != null && n.saturatedFat100 > 5 ? COLORS.amber : COLORS.green,
         },
         {
           label: 'Total Carbs',
-          value: fmtG(n?.carbs100),
-          sub: n?.sugars100 != null ? `Sugars: ${fmt(n.sugars100)}g` : undefined,
+          value: fmtG(disp(n?.carbs100)),
+          sub: n?.sugars100 != null ? `Sugars: ${fmt(disp(n.sugars100))}g` : undefined,
           dot:
             n?.sugars100 != null && n.sugars100 > 22.5
               ? COLORS.danger
@@ -329,14 +343,17 @@ export default function Result() {
         },
         {
           label: 'Proteins',
-          value: fmtG(n?.proteins100),
+          value: fmtG(disp(n?.proteins100)),
           sub: proteinSources(product.ingredientsText),
           dot: COLORS.green,
         },
         {
           label: 'Sodium / Salt',
-          value: fmtG(n?.salt100),
-          sub: n?.sodium100 != null ? `Sodium: ${Math.round(n.sodium100 * 1000)} mg` : undefined,
+          value: fmtG(disp(n?.salt100)),
+          sub:
+            disp(n?.sodium100) != null
+              ? `Sodium: ${Math.round(disp(n?.sodium100)! * 1000)} mg`
+              : undefined,
           dot:
             n?.salt100 != null && n.salt100 > 1.5
               ? COLORS.danger
@@ -346,6 +363,29 @@ export default function Result() {
         },
       ]
     : [];
+
+  // Secondary reference line under the grid: whichever basis the tiles do
+  // NOT show, when a serving size is known.
+  const servingNote: string | null = (() => {
+    if (!product || servingG == null) return null;
+    const parts: string[] = [];
+    const push = (label: string, v?: number) => {
+      if (v != null) parts.push(`${label} ${fmtG(v)}`);
+    };
+    if (servingFirst) {
+      push('Fat', n?.fat100);
+      push('Carbs', n?.carbs100);
+      push('Protein', n?.proteins100);
+      push('Salt', n?.salt100);
+      return parts.length > 0 ? `Per 100 g: ${parts.join(' · ')}` : null;
+    }
+    push('Fat', perServing(n?.fat100, servingG));
+    push('Carbs', perServing(n?.carbs100, servingG));
+    push('Protein', perServing(n?.proteins100, servingG));
+    push('Salt', perServing(n?.salt100, servingG));
+    const servingLabel = product.servingSize ?? `${servingG} g`;
+    return parts.length > 0 ? `Per serving (${servingLabel}): ${parts.join(' · ')}` : null;
+  })();
 
   // Fields that are genuinely missing for this product — the info box names
   // only these, never an invented one.
@@ -467,7 +507,7 @@ export default function Result() {
                 <View style={styles.gaugeHeader}>
                   <View style={styles.gaugeTitleWrap}>
                     <MaterialIcons name="monitor-heart" size={20} color={COLORS.ink} />
-                    <Text style={styles.gaugeTitle}>Metabolic Risk Index</Text>
+                    <Text style={styles.gaugeTitle}>Nutrition Risk Score</Text>
                   </View>
                   <View style={[styles.riskPill, { backgroundColor: `${bandColor}1A` }]}>
                     <View style={[styles.riskDot, { backgroundColor: bandColor }]} />
@@ -498,6 +538,12 @@ export default function Result() {
                 processing level (NOVA), sugar, salt, saturated fat, trans fat, and additives
                 of concern.
               </Text>
+              {region === 'US' || region === 'CA' ? (
+                <Text style={styles.nutriscoreNote}>
+                  Nutri-Score is a European A–E nutrition grade (A healthiest, E least) —
+                  we use it because it reflects sugar, salt, fat and processing.
+                </Text>
+              ) : null}
               {risk.factors.length === 0 ? (
                 <Card>
                   <Text style={styles.zeroText}>
@@ -560,11 +606,15 @@ export default function Result() {
               <View style={styles.nutriHeader}>
                 <View>
                   <Text style={styles.nutriTitle}>Nutrition Facts</Text>
-                  <Text style={styles.nutriSub}>Reference quantity: 100 g portion</Text>
+                  <Text style={styles.nutriSub}>
+                    {servingFirst
+                      ? `per serving (${product.servingSize ?? `${servingG} g`})`
+                      : 'Reference quantity: 100 g portion'}
+                  </Text>
                 </View>
-                {n?.energyKcal100 != null ? (
+                {disp(n?.energyKcal100) != null ? (
                   <View style={styles.kcalPill}>
-                    <Text style={styles.kcalText}>{fmt(n.energyKcal100)} kcal</Text>
+                    <Text style={styles.kcalText}>{fmt(disp(n?.energyKcal100))} kcal</Text>
                   </View>
                 ) : null}
               </View>
@@ -580,6 +630,7 @@ export default function Result() {
                   </View>
                 ))}
               </View>
+              {servingNote ? <Text style={styles.servingNote}>{servingNote}</Text> : null}
 
               <SectionTitle>Declared Ingredients</SectionTitle>
               <Card>
@@ -751,6 +802,17 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: COLORS.soft, textAlign: 'center', fontFamily: FONTS.bodySemi },
   statValue: { fontSize: 17, fontWeight: '800', fontFamily: FONTS.bodyBold, textAlign: 'center' },
   sectionIntro: { color: COLORS.inkSoft, fontSize: 13.5, lineHeight: 20, marginBottom: 12, fontFamily: FONTS.body },
+  nutriscoreNote: {
+    color: COLORS.inkSoft,
+    fontSize: 13.5,
+    lineHeight: 20,
+    marginBottom: 12,
+    backgroundColor: COLORS.amberSoft,
+    borderRadius: 10,
+    padding: 10,
+    fontFamily: FONTS.body,
+  },
+  servingNote: { color: COLORS.soft, fontSize: 12.5, lineHeight: 18, marginTop: 10, fontFamily: FONTS.body },
   factorCard: { marginBottom: 10, padding: 14 },
   factorRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   factorIconTile: {

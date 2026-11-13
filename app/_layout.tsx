@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { Stack, useSegments, router } from 'expo-router';
 import type { Session } from '@supabase/supabase-js';
+import * as Notifications from 'expo-notifications';
 import {
   useFonts as useJakartaFonts,
   PlusJakartaSans_600SemiBold,
@@ -31,6 +33,26 @@ export default function Layout() {
   // load, React Native falls back to the system fonts.
   useJakartaFonts({ PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold });
   useInterFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
+
+  // Weekly summary notifications show as a banner + in the notification
+  // list. No-op on web; on native this only takes effect in a dev build or
+  // a store build (Expo Go does not carry the native module).
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+        }),
+      });
+    } catch {
+      // Notifications are best-effort.
+    }
+  }, []);
 
   // Boot: load the session, then show the branded splash briefly.
   useEffect(() => {
@@ -93,6 +115,8 @@ export default function Layout() {
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
       <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="privacy" />
+      <Stack.Screen name="terms" />
     </Stack>
   );
 }

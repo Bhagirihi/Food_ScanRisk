@@ -12,7 +12,7 @@ export type { LookupResult, OffProduct } from './offParse';
 
 const API_BASE = 'https://world.openfoodfacts.org/api/v2/product';
 const FIELDS =
-  'code,product_name,brands,quantity,nutriscore_grade,nova_group,nutriments,ingredients_text,additives_tags,allergens_tags,traces_tags,image_url,categories_tags';
+  'code,product_name,brands,quantity,serving_size,serving_quantity,nutriscore_grade,nova_group,nutriments,ingredients_text,additives_tags,allergens_tags,traces_tags,image_url,categories_tags';
 // Open Food Facts asks for a descriptive User-Agent on every request.
 const USER_AGENT = 'ScanRisk/1.0 (Android; +https://dhruvdave.in)';
 const CACHE_KEY_PREFIX = 'scanrisk:off:v1:';

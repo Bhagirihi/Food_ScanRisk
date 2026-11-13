@@ -1,4 +1,8 @@
-// First-run onboarding: 3 steps, then sign-in. Shown once (see _layout).
+// First-run onboarding: 3 steps, then a location step, then sign-in.
+// Shown once (see _layout). The location step is skippable and never
+// re-asks: it stores only the country/region (never precise coordinates)
+// so allergens, units and prices match where the user lives; a denied
+// location falls back to the device locale + timezone.
 // The Nutella example uses real, live-verified data for barcode
 // 3017624010701: score 23/50 Moderate (Nutri-Score E +12, sugar 56.3g +6,
 // saturated fat 10.6g +5). The step-2 Smart Swap card is a live lookup
@@ -22,6 +26,7 @@ import {
   getSelectedAllergens,
   matchedAllergens,
 } from '../src/lib/allergens';
+import { detectRegionFromLocation, ensureRegion } from '../src/lib/region';
 import type { OffProduct } from '../src/lib/offParse';
 import { BANDS } from '../src/lib/risk';
 
@@ -187,6 +192,9 @@ export default function Onboarding() {
   const [swap, setSwap] = useState<SmartSwap | null>(null);
   const [nutella, setNutella] = useState<OffProduct | null>(null);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [locationStep, setLocationStep] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [regionLabel, setRegionLabel] = useState<string | null>(null);
   const step = STEPS[index];
   const last = index === STEPS.length - 1;
 
@@ -214,9 +222,70 @@ export default function Onboarding() {
   }, []);
 
   const finish = async () => {
+    // Make sure a region is stored (locale fallback) even when the user
+    // skips onboarding entirely — the Result screen and allergen picker
+    // read it.
+    await ensureRegion();
     await completeOnboarding();
     router.replace('/login');
   };
+
+  // Location step: "Use my location" asks the system once; a denial or a
+  // failed lookup falls back to the device locale and never re-asks.
+  const useMyLocation = async () => {
+    setLocating(true);
+    const info = await detectRegionFromLocation();
+    setLocating(false);
+    if (info) {
+      setRegionLabel(info.label);
+      await finish();
+      return;
+    }
+    // Denied or unavailable — locale fallback, then continue.
+    await finish();
+  };
+
+  const skipLocation = async () => {
+    await finish();
+  };
+
+  if (locationStep) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.top}>
+          <View style={styles.brandRow}>
+            <Image source={require('../assets/icon.png')} style={styles.logo} />
+            <Text style={styles.brand}>ScanRisk</Text>
+          </View>
+          <TextButton label="Skip" onPress={skipLocation} />
+        </View>
+
+        <View style={styles.visual}>
+          <View style={styles.locationIconWrap}>
+            <MaterialIcons name="location-on" size={40} color={COLORS.maroon} />
+          </View>
+          <Text style={styles.locationTitle}>Set your region</Text>
+          <Text style={styles.locationBody}>
+            We use your location only to set your region — allergens, units and
+            prices for your country. Your precise location is never stored, and
+            you can change the region later in Profile.
+          </Text>
+          {regionLabel ? (
+            <Text style={styles.locationDetected}>Region set: {regionLabel}</Text>
+          ) : null}
+        </View>
+
+        <PrimaryButton
+          label={locating ? 'Finding your region…' : 'Use my location'}
+          icon="location-on"
+          onPress={useMyLocation}
+          disabled={locating}
+        />
+        <TextButton label="Skip — use my device language instead" onPress={skipLocation} />
+        <TextButton label="Back" onPress={() => setLocationStep(false)} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -250,7 +319,7 @@ export default function Onboarding() {
       <PrimaryButton
         label={last ? 'Get started' : 'Continue'}
         icon="arrow-forward"
-        onPress={() => (last ? finish() : setIndex(index + 1))}
+        onPress={() => (last ? setLocationStep(true) : setIndex(index + 1))}
       />
       {index > 0 ? <TextButton label="Back" onPress={() => setIndex(index - 1)} /> : null}
       <TextButton label="Already have an account? Sign In" onPress={finish} />
@@ -354,4 +423,35 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginVertical: 24 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.line },
   dotActive: { width: 22, backgroundColor: COLORS.amber },
+  locationIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 999,
+    backgroundColor: COLORS.maroonSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  locationTitle: {
+    color: COLORS.maroon,
+    fontSize: 24,
+    fontWeight: '700',
+    fontFamily: FONTS.headline,
+    textAlign: 'center',
+  },
+  locationBody: {
+    color: COLORS.inkSoft,
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 10,
+    textAlign: 'center',
+    fontFamily: FONTS.body,
+  },
+  locationDetected: {
+    color: COLORS.green,
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 14,
+    fontFamily: FONTS.bodySemi,
+  },
 });

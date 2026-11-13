@@ -66,14 +66,19 @@ Docs: https://docs.expo.dev/eas/index.md
 - Gauge: needle dial via react-native-svg (`src/components/ScoreGauge.tsx`) —
   fixed green→yellow→orange→red gradient arc, tick marks, needle pivoting at
   the diameter line, number + "RISK SCORE" below the dial. The
-  "Metabolic Risk Index" card title + band pill live in app/result.tsx.
+  "Nutrition Risk Score" card title + band pill live in app/result.tsx
+  (renamed from "Metabolic Risk Index" 13 Nov 2026 — US-safe wording).
 - Result (app/result.tsx): Stitch "Product Analysis Detail" — header avatar,
   persistent "Saved to your scan history" banner (dismiss with X), product
   card with quantity badge + brand/category eyebrow (category = first
   non-generic en: categories tag, parsed in offParse.ts), label-top stat
-  tiles, factor cards with category tags, 2x2 nutrition grid with kcal pill,
+  tiles, factor cards with category tags, 2x2 nutrition grid with kcal pill
+  (per-serving primary for US/CA when a serving size is known, per-100g
+  otherwise, with the other basis as a secondary line under the grid),
   ingredients with bolded allergens, missing-data box naming only genuinely
-  missing fields. Share Score is the pale-blue SoftButton (ui.tsx).
+  missing fields. Share Score is the pale-blue SoftButton (ui.tsx). US/CA
+  users get a one-line Nutri-Score explainer under "Every Scoring Point
+  Explained". The risk model stays per-100g regardless of display.
 - Home Recent Scans: band-coloured icon tiles (no photos), "Scanned X ago"
   relative dates, "• N/50 LABEL" score pills (LOW/MOD/HIGH/V. HIGH),
   "View all N" link + full-width "View all N scans in History" button.
@@ -98,14 +103,19 @@ Docs: https://docs.expo.dev/eas/index.md
   (headless browser has no external network) — on a real phone they load.
 - Register (app/register.tsx): Stitch "Create Account" — title card, icon
   fields with label rows, always-visible 4-segment strength meter + 3 check
-  pills, Terms as plain text with no links (docs don't exist), compact
-  SetupNotice (one-line, dismissible; full box stays on Login/Forgot).
+  pills, Terms checkbox with real links to the in-app Terms of Service and
+  Privacy Policy (app/terms.tsx, app/privacy.tsx), compact SetupNotice
+  (one-line, dismissible; full box stays on Login/Forgot).
 - Fixtures: scripts/fixtures/nutella.json = live 400g jar data (23 Moderate);
   nutella-mini.json = live 15g pack 80177173 (38 High — NOVA 4 + trans fat
   0.1g). The two packs are different OFF entries; the model is the same.
-- Allergens: `src/lib/allergens.ts` (10 common allergens, AsyncStorage,
-  matched against OFF allergen tags on Result; collapsible "Allergen
-  Alerts" row in Profile, collapsed by default, expands to the picker).
+- Allergens: `src/lib/allergenData.ts` (pure catalogue — 11 items incl.
+  Shellfish; `allergensForRegion` returns the FDA 9 for US/CA with Wheat /
+  Tree nuts / Peanut labels, full list elsewhere), `src/lib/allergens.ts`
+  (AsyncStorage + tag matching against OFF allergen tags on Result;
+  collapsible "Allergen Alerts" row in Profile, collapsed by default,
+  expands to the region's picker). Stored selections are ids, so relabelling
+  never breaks them.
 - Settings: `src/lib/settings.ts` (torch default, Pro Tip dismissal,
   tips-enabled flag read by the Tour effects, last manually-entered barcode
   for the scanner's manual card prefix).
@@ -169,6 +179,29 @@ Docs: https://docs.expo.dev/eas/index.md
   replay onboarding, reset tips, clear history/cache, measured cache size
   (`getProductCacheSizeBytes` in openfoodfacts.ts — real AsyncStorage bytes,
   never a demo figure), custom maroon/grey toggles (no native Switch).
+- Phase 1 — US/Canada/western, no ads (13 Nov 2026): region in
+  `src/lib/region.ts` (AsyncStorage `scanrisk:region:v1`, {region, label,
+  source}) + pure inference in `src/lib/regionInfer.ts` (locale region subtag
+  + IANA timezone; Latin-American locales stay ROW, unknown timezones ROW,
+  no signal returns null so defaults are kept). Onboarding asks location once
+  after the 3 steps (Use my location / Skip); coordinates are reverse-geocoded
+  in memory and discarded — only the region is stored. Weekly summary in
+  `src/lib/weeklySummary.ts` (expo-notifications, local only, Sundays 09:00,
+  recomputed on Home entry, skipped with no scans in 7 days; all entry points
+  are silent no-ops on web). Pro pricing placeholders in
+  `src/lib/proPricing.ts` (constants only, no paywall UI). Serving size parsed
+  in offParse.ts (`serving_quantity` first, then `serving_size` string);
+  `perServing` is the only serving math. Installed 13 Nov 2026 via
+  `npm install --legacy-peer-deps`: expo-location 58.0.22,
+  expo-notifications 58.1.9, expo-localization 58.0.5 (plugins in app.json
+  with the locationWhenInUsePermission message; notifications plugin icon
+  ./assets/icon.png, color #4A121A). Native permission sheets need a dev
+  build — JS verified, native prompts not phone-verified.
+- Web preview server gotcha (13 Nov 2026): an old `node serve.mjs dist`
+  from a previous round was still listening on 127.0.0.1:8002, so the new
+  server died EADDRINUSE and the browser silently rendered the OLD build
+  (stale "Metabolic Risk Index", no notification card). Before screenshotting,
+  check `ss -ltnp | grep 8002` and kill any stale server first.
 - Coach marks: `src/components/Tour.tsx` (adapted from Shubh's Tour; measure
   targets via `Measurable` interface + callback refs — RN 0.88 types `View`
   as the component, not the instance, so `useRef<View>` does not typecheck).

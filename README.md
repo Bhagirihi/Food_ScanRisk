@@ -58,21 +58,46 @@ Guidance from label data, not medical advice.
 ## Tests
 
 ```bash
-npx tsc src/lib/risk.ts src/lib/offParse.ts --ignoreConfig --outDir .tmp-test \
+npx tsc src/lib/risk.ts src/lib/offParse.ts src/lib/smartSwap.ts src/lib/allergenData.ts src/lib/regionInfer.ts --ignoreConfig --outDir .tmp-test \
   --module commonjs --target es2020 --esModuleInterop --skipLibCheck
 node scripts/test-risk.mjs
+node scripts/test-serving.mjs
+node scripts/test-region-allergens.mjs
+node scripts/test-smart-swap.mjs
 ```
 
-Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
+Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap;
+serving-size parsing + per-serving math; region-aware allergen sets and
+locale/timezone region inference; Smart Swap selection (offline) + live lookup.
 
 ## Status (13 Nov 2026)
 
+- Phase 1 — US/Canada/western audiences, no ads (13 Nov 2026): location
+  permission (expo-location) asked once after the 3 onboarding steps, with a
+  skippable "Set your region" step — only the country/region is stored, never
+  precise coordinates; locale + timezone fallback (expo-localization) when
+  denied; manual region setting in Profile. Notification permission
+  (expo-notifications) asked once on first Home entry via an in-app explainer
+  card (Allow / Not now), one-shot, with a Profile toggle; a local weekly
+  summary (Sundays 09:00) is built from the user's real last-7-days history
+  and skipped when there are no scans. US/CA get the FDA 9 allergens (Wheat,
+  Tree nuts, Peanut labels; same ids/tags, so stored selections keep working)
+  and per-serving nutrition as the primary display (per-100g kept as the
+  secondary reference); other regions keep per-100g primary with per-serving
+  as secondary. The gauge is renamed "Nutrition Risk Score" (no medical
+  implication) and US/CA users get a one-line Nutri-Score explainer. In-app
+  Privacy Policy + Terms of Service screens (app/privacy.tsx, app/terms.tsx),
+  linked from Register (real links in the Terms checkbox) and Profile/About.
+  Region-aware Pro pricing constants only (src/lib/proPricing.ts) — no paywall
+  or Pro upsell UI. The scoring model (src/lib/risk.ts) is untouched and
+  stays per-100g. Native location/notification prompts need a dev build to
+  fully verify — the JS is verified, the native sheets are not phone-tested.
 - v2: full rebuild to the Google Stitch "NutriScan" design (maroon #4A121A,
   amber #D97706, Plus Jakarta Sans + Inter, pill buttons, bottom tabs,
   SVG risk gauge, allergen alerts, history search/filters/CSV export,
   password strength meter, Apple/Google sign-in). App name stays ScanRisk.
 - Result screen rebuilt to the Stitch "Product Analysis Detail" frame:
-  needle-dial gauge ("Metabolic Risk Index" + band pill), label-top stat
+  needle-dial gauge ("Nutrition Risk Score" + band pill), label-top stat
   tiles, factor cards with category tags, 2x2 nutrition grid with kcal pill,
   bolded allergens in ingredients, persistent "Saved to your scan history"
   banner. Home Recent Scans rebuilt to the Stitch spec: band-coloured icon
@@ -84,8 +109,8 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
   Clean Score amber, Allergens Tracked green), collapsible Allergen Alerts
   row, preference rows with icon tiles + hand-built maroon/grey toggles,
   data rows with real history count and measured cache size, About card with
-  real version v1.0.0 and an Open Source link only (no Privacy/Terms — those
-  docs don't exist; no fake "Database synced" line).
+  real version v1.0.0, Privacy Policy + Terms of Service links, and an Open
+  Source link (no fake "Database synced" line).
 - Home rebuilt to the Stitch "Home Dashboard" frame: "NUTRITIONAL
   INTELLIGENCE" eyebrow, pale-blue Pro Tip card, one large dark-maroon
   gradient Scan card (gold corner brackets, glowing barcode icon + scanline,
@@ -106,8 +131,9 @@ Covers parsing of a real Nutella response, scoring, band edges, and the 50 cap.
   white title card ("Create Your ScanRisk Account", "real-time nutritional
   intelligence"), icon fields with label rows (Full Name / Required, Email /
   Institutional / Personal, Password with live strength pill), strength
-  meter always visible (4 segments + 3 check pills), Terms as plain text
-  with NO links (the docs don't exist yet), maroon Create Account button,
+  meter always visible (4 segments + 3 check pills), Terms checkbox with
+  real links to the in-app Terms of Service and Privacy Policy, maroon Create
+  Account button,
   "Already an active subscriber? Sign In" + "Continue as guest". The
   SetupNotice on Register is a small dismissible one-line note; Login /
   Forgot now use the same small one-line note.
