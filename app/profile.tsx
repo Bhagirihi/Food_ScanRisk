@@ -15,6 +15,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Session } from '@supabase/supabase-js';
 
+import AdBanner from '../src/components/AdBanner';
 import BottomTabs from '../src/components/BottomTabs';
 import { Card, TextButton, Toast } from '../src/components/ui';
 import { getSession, signOut } from '../src/lib/supabase';
@@ -498,6 +499,7 @@ export default function Profile() {
           )}
         </View>
       </ScrollView>
+      <AdBanner />
       <BottomTabs active="profile" />
       {toast ? <Toast message={toast} /> : null}
     </SafeAreaView>

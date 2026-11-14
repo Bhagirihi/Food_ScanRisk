@@ -59,27 +59,37 @@ async function searchSameCategory(slug: string): Promise<OffProduct[]> {
 }
 
 /**
- * Find the best lower-scoring alternative to `product` in its own category.
- * Returns null when there is no category to search, the search fails, or no
- * candidate scores lower with real label data behind it. A product with
- * almost no label data (dataQuality 'minimal') is never recommended — a
- * 0-point score from missing data is not a better product.
+ * Find the best lower-scoring alternatives to `product` in its own
+ * category, best (lowest) score first, up to `limit` entries. Returns []
+ * when there is no category to search, the search fails, or no candidate
+ * scores lower with real label data behind it. A product with almost no
+ * label data (dataQuality 'minimal') is never recommended — a 0-point
+ * score from missing data is not a better product.
  */
-export async function findSmartSwap(product: OffProduct): Promise<SmartSwap | null> {
+export async function findSmartSwaps(product: OffProduct, limit = 3): Promise<SmartSwap[]> {
   const slug = product.categoryTag;
-  if (!slug) return null;
+  if (!slug) return [];
   const original = scoreProduct(product);
   const candidates = await searchSameCategory(slug);
-  let best: SmartSwap | null = null;
+  const scored: SmartSwap[] = [];
   for (const alt of candidates) {
     if (alt.barcode === product.barcode) continue;
     if (!alt.name || alt.name.startsWith('Product ')) continue;
     const r = scoreProduct(alt);
     if (r.dataQuality === 'minimal') continue;
     if (r.score >= original.score) continue;
-    if (!best || r.score < best.score) {
-      best = { product: alt, score: r.score, band: r.band, boost: original.score - r.score };
-    }
+    scored.push({ product: alt, score: r.score, band: r.band, boost: original.score - r.score });
   }
-  return best;
+  scored.sort((a, b) => a.score - b.score);
+  return scored.slice(0, Math.max(1, limit));
+}
+
+/**
+ * Find the best lower-scoring alternative to `product` in its own category.
+ * Returns null when there is no category to search, the search fails, or no
+ * candidate scores lower with real label data behind it.
+ */
+export async function findSmartSwap(product: OffProduct): Promise<SmartSwap | null> {
+  const swaps = await findSmartSwaps(product, 1);
+  return swaps[0] ?? null;
 }

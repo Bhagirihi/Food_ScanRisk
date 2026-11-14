@@ -15,7 +15,9 @@ import * as Sharing from 'expo-sharing';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import AdBanner from '../src/components/AdBanner';
 import BottomTabs from '../src/components/BottomTabs';
+import NativeAdCard from '../src/components/NativeAdCard';
 import { PrimaryButton, Toast } from '../src/components/ui';
 import { clearHistory, getHistory, removeRecord, type ScanRecord } from '../src/lib/history';
 import { getCachedProduct, type OffProduct } from '../src/lib/openfoodfacts';
@@ -410,18 +412,24 @@ export default function History() {
         data={visible}
         keyExtractor={(r) => `${r.barcode}-${r.scannedAt}`}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <HistoryRow
-            record={item}
-            onExport={() => exportRecord(item)}
-            onDelete={() => deleteRecord(item)}
-          />
+        renderItem={({ item, index }) => (
+          <View>
+            <HistoryRow
+              record={item}
+              onExport={() => exportRecord(item)}
+              onDelete={() => deleteRecord(item)}
+            />
+            {/* Native ad in the feed, after every 5th row. Renders nothing
+                in Expo Go or when no ad fills — the feed is untouched. */}
+            {index % 5 === 4 ? <NativeAdCard /> : null}
+          </View>
         )}
         ListEmptyComponent={
           <Text style={styles.emptyText}>Nothing matches — try a different search or filter.</Text>
         }
       />
 
+      <AdBanner />
       <BottomTabs active="history" />
       {toast ? <Toast message={toast} /> : null}
     </SafeAreaView>

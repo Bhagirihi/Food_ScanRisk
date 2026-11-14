@@ -232,6 +232,23 @@ Docs: https://docs.expo.dev/eas/index.md
   Personal Allergen Shield from real selections. Result screen has a Smart
   Swap section (omitted when none found). Scanner overlay: flex-start +
   gap 18, bottomRow marginTop auto (camera not verifiable in web preview).
+- Ads (14 Nov 2026, TEST IDs only): react-native-google-mobile-ads 17.4.0,
+  config plugin in app.json with Google's TEST app IDs
+  (android ~3347511713 / iOS ~1458002511). IDs live in `src/lib/admob.ts`
+  (each marked TODO — replace with real AdMob IDs from the console; no
+  real AdMob app exists yet) with EXPO_PUBLIC_ADMOB_* overrides; lazy
+  access in `src/lib/ads.ts` (dynamic import + try/catch, Expo Go guard
+  via expo-constants — ads silently off in Expo Go, never break it).
+  Placements: banner on History + Profile (`src/components/AdBanner.tsx`,
+  anchored adaptive), native ad in the History feed after every 5th row
+  (`src/components/NativeAdCard.tsx`, TEST native unit is
+  platform-specific: Android /2247696110, iOS /3986624511), rewarded ad
+  for Smart Swap extras on Result (first swap free; `findSmartSwaps`
+  in `src/lib/smartSwap.ts` returns up to N alternatives). NEVER an
+  interstitial between Scan and Result (no interstitial code exists) and
+  NEVER a banner on the camera or Result screens. Needs a dev build to
+  prove on a phone; Play listing ads flag + data safety still to change
+  when real IDs land.
 - Web preview: `expo export --platform web` needs react-dom 19.3.0 to match
   react 19.3.0 (19.3.1 breaks with React error #527); pin it in the
   DISPOSABLE copy only. Serve dist with an SPA-fallback server (plain

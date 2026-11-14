@@ -19,7 +19,8 @@ import { hasSeenTip, markTipSeen } from '../src/lib/tips';
 import { getTipsEnabled } from '../src/lib/settings';
 import { getSelectedAllergens, matchedAllergens, type Allergen } from '../src/lib/allergens';
 import { getCachedProduct, lookupBarcode, setCachedProduct } from '../src/lib/openfoodfacts';
-import { findSmartSwap, type SmartSwap } from '../src/lib/smartSwap';
+import { findSmartSwap, findSmartSwaps, type SmartSwap } from '../src/lib/smartSwap';
+import { isAdMobAvailable, showRewardedAd } from '../src/lib/ads';
 import { CONCERN_ADDITIVES, scoreProduct, type RiskFactor, type RiskResult } from '../src/lib/risk';
 import type { OffProduct } from '../src/lib/offParse';
 import { perServing } from '../src/lib/offParse';
@@ -155,6 +156,11 @@ export default function Result() {
   const [displayName, setDisplayName] = useState('Guest');
   const [savedBanner, setSavedBanner] = useState(false);
   const [swap, setSwap] = useState<SmartSwap | null>(null);
+  // Smart Swap extras: more lower-scoring alternatives, unlocked by
+  // watching one rewarded ad. Never shown in Expo Go (ads silently off).
+  const [extraSwaps, setExtraSwaps] = useState<SmartSwap[]>([]);
+  const [extrasState, setExtrasState] = useState<'idle' | 'loading' | 'unlocked'>('idle');
+  const [extrasNote, setExtrasNote] = useState('');
   const [imageFailed, setImageFailed] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const containerRef = useRef<Measurable | null>(null);
@@ -170,6 +176,9 @@ export default function Result() {
     setImageFailed(false);
     setSavedBanner(false);
     setSwap(null);
+    setExtraSwaps([]);
+    setExtrasState('idle');
+    setExtrasNote('');
   }
 
   useEffect(() => {
@@ -282,7 +291,27 @@ export default function Result() {
     setProduct(null);
     setRisk(null);
     setSavedBanner(false);
+    setExtraSwaps([]);
+    setExtrasState('idle');
+    setExtrasNote('');
     setReload((r) => r + 1);
+  };
+
+  // Rewarded ad for Smart Swap extras: the first swap is always free;
+  // up to 2 more lower-scoring alternatives unlock after one rewarded ad.
+  const onShowMoreSwaps = async () => {
+    if (!product || extrasState !== 'idle') return;
+    setExtrasState('loading');
+    const earned = await showRewardedAd();
+    if (!earned) {
+      setExtrasState('idle');
+      setExtrasNote('Ad was not available — try again in a moment');
+      return;
+    }
+    const all = await findSmartSwaps(product, 3);
+    // The first alternative is already shown as the free Smart Swap.
+    setExtraSwaps(all.filter((s) => s.product.barcode !== swap?.product.barcode).slice(0, 2));
+    setExtrasState('unlocked');
   };
 
   const matched: Allergen[] = product ? matchedAllergens(selectedAllergens, product.allergens) : [];
@@ -600,6 +629,49 @@ export default function Result() {
                       }
                     />
                   </Card>
+                  {/* Smart Swap extras: more lower-scoring alternatives, unlocked
+                      by one rewarded ad. Hidden in Expo Go (ads silently off). */}
+                  {extraSwaps.map((extra) => (
+                    <Card key={extra.product.barcode} style={styles.swapCard}>
+                      <View style={styles.swapRow}>
+                        <View style={styles.swapText}>
+                          <Text style={styles.swapLabel}>ANOTHER BETTER OPTION</Text>
+                          <Text style={styles.swapName}>{extra.product.name}</Text>
+                          <Text style={styles.swapMeta}>
+                            {extra.product.brands ? `${extra.product.brands} • ` : ''}
+                            {extra.score} / 50 {BANDS[extra.band].label}
+                          </Text>
+                        </View>
+                        <View style={styles.swapBoost}>
+                          <Text style={styles.swapBoostText}>+{extra.boost} Score Boost</Text>
+                        </View>
+                      </View>
+                      <TextButton
+                        label="View this swap"
+                        onPress={() =>
+                          router.push({ pathname: '/result', params: { barcode: extra.product.barcode } })
+                        }
+                      />
+                    </Card>
+                  ))}
+                  {extrasState === 'unlocked' && extraSwaps.length === 0 ? (
+                    <Text style={styles.extraNote}>No more lower-scoring options found.</Text>
+                  ) : null}
+                  {extrasState !== 'unlocked' && isAdMobAvailable() ? (
+                    <Pressable
+                      style={styles.moreSwapsButton}
+                      onPress={onShowMoreSwaps}
+                      disabled={extrasState === 'loading'}
+                    >
+                      <MaterialIcons name="play-circle-outline" size={20} color={COLORS.maroon} />
+                      <Text style={styles.moreSwapsText}>
+                        {extrasState === 'loading'
+                          ? 'Loading ad…'
+                          : 'More swaps — watch a short ad to reveal up to 2 more'}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  {extrasNote ? <Text style={styles.extraNote}>{extrasNote}</Text> : null}
                 </>
               ) : null}
 
@@ -839,6 +911,20 @@ const styles = StyleSheet.create({
   swapMeta: { fontSize: 13.5, color: COLORS.inkSoft, marginTop: 3, fontFamily: FONTS.bodySemi },
   swapBoost: { backgroundColor: COLORS.green, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   swapBoostText: { color: '#fff', fontSize: 12, fontWeight: '800', fontFamily: FONTS.bodyBold },
+  moreSwapsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.card,
+    borderColor: COLORS.line,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  moreSwapsText: { color: COLORS.maroon, fontSize: 13.5, fontWeight: '700', fontFamily: FONTS.bodySemi },
   nutriHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 26, marginBottom: 12 },
   nutriTitle: { fontSize: 20, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.headline },
   nutriSub: { fontSize: 13, color: COLORS.soft, marginTop: 4, fontFamily: FONTS.body },
