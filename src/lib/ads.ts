@@ -5,10 +5,20 @@
 // callers: the `import type` below is erased at compile time and never
 // touches the native module at runtime.
 //
+// 15 Nov 2026 fix (Expo Go crash: RNGoogleMobileAdsModule not found):
+// the dynamic import above only runs when isAdMobAvailable() is true,
+// but that check used to rely on expo-constants alone — and in Expo Go
+// it let the import run anyway, so Metro evaluated the AdMob package
+// and its getEnforcing() threw outside any try/catch. The deciding
+// guard is now hasNativeAdsModule() below: it asks the TurboModule
+// registry whether the native module is actually present in the running
+// binary, which is the one thing that cannot be wrong. The dynamic
+// import + try/catch stays as a backstop.
+//
 // Deliberately NO interstitial support here: an interstitial between Scan
 // and Result is forbidden, so no interstitial code exists in this app.
 
-import { Platform } from 'react-native';
+import { Platform, TurboModuleRegistry } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type * as Ads from 'react-native-google-mobile-ads';
 
@@ -28,13 +38,28 @@ export function isExpoGo(): boolean {
 }
 
 /**
+ * True only when the AdMob native module is actually registered in the
+ * running binary. TurboModuleRegistry.get returns null (never throws)
+ * when the module is absent — e.g. Expo Go, which ships no custom
+ * native modules — and the module itself in a dev or store build.
+ */
+function hasNativeAdsModule(): boolean {
+  try {
+    return TurboModuleRegistry.get('RNGoogleMobileAdsModule') != null;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * True only on iOS/Android builds that include custom native code — i.e.
  * dev builds and store builds. False in Expo Go and on web, where ads
- * stay silently off.
+ * stay silently off. The native-module check is the deciding guard: it
+ * is what keeps the dynamic import below from ever running in Expo Go.
  */
 export function isAdMobAvailable(): boolean {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return false;
-  return !isExpoGo();
+  return !isExpoGo() && hasNativeAdsModule();
 }
 
 /**
