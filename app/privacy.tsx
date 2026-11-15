@@ -38,7 +38,15 @@ export default function Privacy() {
         <Section title="What stays on your phone">
           Your scan history (up to your last 50 scans), your allergen selections, your
           region, and cached product details are stored on your device only. We do not
-          sell your data, and there are no ads in ScanRisk.
+          sell your data.
+        </Section>
+
+        <Section title="Ads">
+          ScanRisk shows ads from Google AdMob (banner, native and rewarded ads). To
+          show ads, AdMob may collect your device’s advertising ID; it does not
+          receive your scan history, allergen selections, region or account details.
+          You can reset your advertising ID or opt out of personalised ads in your
+          device’s settings.
         </Section>
 
         <Section title="Location">
