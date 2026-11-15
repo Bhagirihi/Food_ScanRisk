@@ -23,7 +23,7 @@ import { clearHistory, getHistory, removeRecord, type ScanRecord } from '../src/
 import { getCachedProduct, type OffProduct } from '../src/lib/openfoodfacts';
 import { scoreProduct, type RiskFactor } from '../src/lib/risk';
 import { BANDS, COLORS, FONTS } from '../src/lib/theme';
-import { getSession } from '../src/lib/supabase';
+import { getCurrentUser } from '../src/lib/firebase';
 import { isGuest } from '../src/lib/session';
 
 type Filter = 'all' | 'low' | 'moderate' | 'high';
@@ -223,10 +223,9 @@ export default function History() {
       getHistory().then((r) => {
         if (alive) setRecords(r);
       });
-      Promise.all([getSession(), isGuest()]).then(([s, guest]) => {
+      Promise.all([getCurrentUser(), isGuest()]).then(([s, guest]) => {
         if (!alive) return;
-        const meta = (s?.user?.user_metadata ?? {}) as { full_name?: string };
-        setDisplayName(guest ? 'Guest' : meta.full_name || s?.user?.email?.split('@')[0] || 'Guest');
+        setDisplayName(guest ? 'Guest' : s?.displayName || s?.email?.split('@')[0] || 'Guest');
       });
       return () => {
         alive = false;

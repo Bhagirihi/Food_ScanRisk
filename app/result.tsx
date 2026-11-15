@@ -27,7 +27,7 @@ import { perServing } from '../src/lib/offParse';
 import { getRegion } from '../src/lib/region';
 import type { RegionCode } from '../src/lib/regionInfer';
 import { saveScan } from '../src/lib/history';
-import { getSession } from '../src/lib/supabase';
+import { getCurrentUser } from '../src/lib/firebase';
 import { isGuest } from '../src/lib/session';
 import { BANDS, COLORS, FONTS } from '../src/lib/theme';
 
@@ -189,9 +189,8 @@ export default function Result() {
   }, []);
 
   useEffect(() => {
-    Promise.all([getSession(), isGuest()]).then(([s, guest]) => {
-      const meta = (s?.user?.user_metadata ?? {}) as { full_name?: string };
-      setDisplayName(guest ? 'Guest' : meta.full_name || s?.user?.email?.split('@')[0] || 'Guest');
+    Promise.all([getCurrentUser(), isGuest()]).then(([s, guest]) => {
+      setDisplayName(guest ? 'Guest' : s?.displayName || s?.email?.split('@')[0] || 'Guest');
     });
   }, []);
 

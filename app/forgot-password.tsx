@@ -3,11 +3,10 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { isSupabaseConfigured, supabase } from '../src/lib/supabase';
+import { authErrorMessage, resetPassword } from '../src/lib/firebase';
 import { COLORS, FONTS } from '../src/lib/theme';
 import { Card, PrimaryButton, TextButton } from '../src/components/ui';
 import { AuthShell } from '../src/components/AuthShell';
-import { SetupNotice } from '../src/components/SetupNotice';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
@@ -25,18 +24,12 @@ export default function ForgotPassword() {
       setError('Enter a valid email address.');
       return;
     }
-    if (!isSupabaseConfigured || !supabase) {
-      setError('Password reset is not connected yet — Supabase needs to be set up first.');
-      return;
-    }
     setBusy(true);
     try {
-      const { error: authError } = await supabase.auth.resetPasswordForEmail(email.trim());
-      if (authError) {
-        setError(authError.message);
-        return;
-      }
+      await resetPassword(email.trim());
       setSent(true);
+    } catch (e) {
+      setError(authErrorMessage(e, 'Could not send the reset link. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -55,8 +48,6 @@ export default function ForgotPassword() {
 
   return (
     <AuthShell title="Reset Password" sub="Enter the email associated with your ScanRisk account and we will send a secure link to reset your password.">
-      {!isSupabaseConfigured ? <SetupNotice compact /> : null}
-
       <Card>
         <Text style={styles.label}>Registered Account Email</Text>
         <View style={styles.emailRow}>

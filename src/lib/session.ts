@@ -1,5 +1,5 @@
-// First-run flags: onboarding completion and guest mode (used when no
-// Supabase project is configured yet, so the scanner stays usable).
+// First-run flags: onboarding completion and guest mode (guest mode lets
+// the scanner stay usable without an account).
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

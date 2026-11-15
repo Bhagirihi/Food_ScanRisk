@@ -13,7 +13,7 @@ import { hasSeenTip, markTipSeen } from '../src/lib/tips';
 import { getProTipDismissed, getTipsEnabled, setProTipDismissed } from '../src/lib/settings';
 import { getHistory, type ScanRecord } from '../src/lib/history';
 import { BANDS, bandForScore, type RiskBand } from '../src/lib/risk';
-import { getSession } from '../src/lib/supabase';
+import { getCurrentUser } from '../src/lib/firebase';
 import { isGuest } from '../src/lib/session';
 import {
   markNotificationPromptAsked,
@@ -99,10 +99,9 @@ export default function Home() {
           setSnapshotNow(Date.now());
         }
       });
-      Promise.all([getSession(), isGuest(), getProTipDismissed()]).then(([s, guest, dismissed]) => {
+      Promise.all([getCurrentUser(), isGuest(), getProTipDismissed()]).then(([s, guest, dismissed]) => {
         if (!alive) return;
-        const meta = (s?.user?.user_metadata ?? {}) as { full_name?: string };
-        setDisplayName(guest ? 'Guest' : meta.full_name || s?.user?.email?.split('@')[0] || 'Guest');
+        setDisplayName(guest ? 'Guest' : s?.displayName || s?.email?.split('@')[0] || 'Guest');
         setProTipVisible(!dismissed);
       });
       Promise.all([hasSeenTip('home'), getTipsEnabled()]).then(([seen, enabled]) => {

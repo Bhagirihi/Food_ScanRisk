@@ -3,12 +3,11 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { isSupabaseConfigured, supabase } from '../src/lib/supabase';
+import { authErrorMessage, signIn } from '../src/lib/firebase';
 import { setGuest } from '../src/lib/session';
 import { COLORS, FONTS } from '../src/lib/theme';
 import { Card, PrimaryButton, TextButton } from '../src/components/ui';
 import { AuthShell } from '../src/components/AuthShell';
-import { SetupNotice } from '../src/components/SetupNotice';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
@@ -29,25 +28,12 @@ export default function Login() {
       setError('Enter your password.');
       return;
     }
-    if (!isSupabaseConfigured || !supabase) {
-      setError('Sign-in is not connected yet — use guest mode below for now.');
-      return;
-    }
     setBusy(true);
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (authError) {
-        setError(
-          authError.message === 'Invalid login credentials'
-            ? 'Wrong email or password. Try again.'
-            : authError.message,
-        );
-        return;
-      }
+      await signIn(email.trim(), password);
       router.replace('/');
+    } catch (e) {
+      setError(authErrorMessage(e, 'Sign-in failed. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -60,8 +46,6 @@ export default function Login() {
 
   return (
     <AuthShell title="Welcome Back" sub="Sign in to access your saved food scans, allergen alerts, and risk logs.">
-      {!isSupabaseConfigured ? <SetupNotice compact /> : null}
-
       <Card>
         <Text style={styles.label}>Email Address</Text>
         <View style={styles.field}>

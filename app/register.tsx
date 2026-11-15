@@ -3,12 +3,10 @@ import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { isSupabaseConfigured, supabase } from '../src/lib/supabase';
+import { authErrorMessage, signUp } from '../src/lib/firebase';
 import { setGuest } from '../src/lib/session';
 import { COLORS, FONTS } from '../src/lib/theme';
 import { Card, PrimaryButton, TextButton } from '../src/components/ui';
-import { AuthShell } from '../src/components/AuthShell';
-import { SetupNotice } from '../src/components/SetupNotice';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
@@ -25,7 +23,6 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState('');
-  const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const passed = STRENGTH_CHECKS.filter((c) => c.test(password)).length;
@@ -59,30 +56,14 @@ export default function Register() {
       setError('Please accept the Terms of Service to continue.');
       return;
     }
-    if (!isSupabaseConfigured || !supabase) {
-      setError('Sign-up is not connected yet — use guest mode for now.');
-      return;
-    }
     setBusy(true);
     try {
-      const { data, error: authError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: { data: { full_name: name.trim() } },
-      });
-      if (authError) {
-        setError(
-          authError.message === 'User already registered'
-            ? 'An account with this email already exists. Try logging in.'
-            : authError.message,
-        );
-        return;
-      }
-      if (data.session) {
-        router.replace('/');
-      } else {
-        setSent(true);
-      }
+      // Firebase signs the user in immediately on sign-up (no confirmation
+      // email step), so a successful sign-up goes straight to Home.
+      await signUp(email.trim(), password, name.trim());
+      router.replace('/');
+    } catch (e) {
+      setError(authErrorMessage(e, 'Sign-up failed. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -93,17 +74,6 @@ export default function Register() {
     router.replace('/');
   };
 
-  if (sent) {
-    return (
-      <AuthShell
-        title="Check your inbox"
-        sub={`We sent a confirmation link to ${email.trim()}. Tap it, then log in here.`}
-      >
-        <PrimaryButton label="Back to log in" onPress={() => router.replace('/login')} />
-      </AuthShell>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -111,8 +81,6 @@ export default function Register() {
           <Image source={require('../assets/icon.png')} style={styles.logo} />
           <Text style={styles.brand}>ScanRisk</Text>
         </View>
-
-        {!isSupabaseConfigured ? <SetupNotice compact /> : null}
 
         <Card style={styles.titleCard}>
           <Text style={styles.title}>Create Your ScanRisk Account</Text>

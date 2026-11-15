@@ -57,7 +57,7 @@ export default function Privacy() {
         <Section title="Accounts (optional)">
           You can use ScanRisk as a guest with no account at all. If you create an
           account, we store the email address and name you provide, only to sign you
-          in. Signing in is handled by Supabase; your password is never visible to us.
+          in. Signing in is handled by Firebase Authentication; your password is never visible to us.
         </Section>
 
         <Section title="Product data">

@@ -104,8 +104,7 @@ Docs: https://docs.expo.dev/eas/index.md
 - Register (app/register.tsx): Stitch "Create Account" — title card, icon
   fields with label rows, always-visible 4-segment strength meter + 3 check
   pills, Terms checkbox with real links to the in-app Terms of Service and
-  Privacy Policy (app/terms.tsx, app/privacy.tsx), compact SetupNotice
-  (one-line, dismissible; full box stays on Login/Forgot).
+  Privacy Policy (app/terms.tsx, app/privacy.tsx).
 - Fixtures: scripts/fixtures/nutella.json = live 400g jar data (23 Moderate);
   nutella-mini.json = live 15g pack 80177173 (38 High — NOVA 4 + trans fat
   0.1g). The two packs are different OFF entries; the model is the same.
@@ -165,23 +164,34 @@ Docs: https://docs.expo.dev/eas/index.md
   web-only; the native scanner is used on a real device.
 - History export: per-row CSV via expo-file-system (cache dir) +
   expo-sharing; per-row delete via `removeRecord` in `src/lib/history.ts`.
-- Auth (15 Nov 2026, his instruction): Supabase email/password ONLY —
-  Google/Apple OAuth REMOVED from login.tsx (oauth() fn, social buttons,
-  signInWithOAuth + exchangeCodeForSession + expo-web-browser import all
-  gone; the expo-web-browser package is still installed but unused).
-  Session persists via persistSession + AsyncStorage + autoRefreshToken
-  (src/lib/supabase.ts); _layout restores it on boot and routes signed-in
-  users straight to Home. Sign-in needs his Supabase URL + anon key;
-  until then the SetupNotice banner shows ("Sign-in is not connected
-  yet — guest mode works") and guest mode is what runs.
+- Auth (15 Nov 2026, his instruction): Firebase Authentication,
+  email/password ONLY — Google/Apple OAuth REMOVED from login.tsx
+  (oauth() fn, social buttons, signInWithOAuth + exchangeCodeForSession +
+  expo-web-browser import all gone; the expo-web-browser package is still
+  installed but unused). Firebase project "scanrisk" (web app "ScanRisk
+  Web", Email/Password enabled in the console); config in
+  `src/lib/firebase.ts` (apiKey is a client identifier, not a secret).
+  Uses the Firebase JS SDK (works in Expo Go; the native
+  @react-native-firebase SDK would need a dev build). Session persists
+  via AsyncStorage (`initializeAuth` + `getReactNativePersistence`) —
+  auth is imported from '@firebase/auth', NOT 'firebase/auth', because
+  the umbrella package (v13) does not forward the react-native export
+  condition and its web build has no getReactNativePersistence (see
+  `src/lib/firebase-auth.d.ts` for the type augmentation). _layout
+  restores the session on boot via onAuthStateChanged and routes
+  signed-in users straight to Home. Sign-up signs the user in
+  immediately (Firebase has no confirmation-email step). Supabase is
+  fully removed (src/lib/supabase.ts + SetupNotice deleted,
+  @supabase/supabase-js uninstalled).
 - Splash: `expo-splash-screen` config plugin in app.json; art
   `assets/splash.png`, solid maroon #4A121A bg, regenerable via
   `scripts/make-splash.py` (uses Plus Jakarta Sans from node_modules when
   present, Noto Serif fallback).
 - Flow: BrandedSplash (boot) -> onboarding (once) -> login/register/forgot
-  (Supabase email+password, `src/lib/supabase.ts`) -> home. Guest mode when
-  Supabase is unconfigured (`scanrisk:guest:v1`); profile has sign out,
-  replay onboarding, reset tips, clear history/cache, measured cache size
+  (Firebase Auth email+password, `src/lib/firebase.ts`) -> home. Guest mode
+  (`scanrisk:guest:v1`) is always available alongside sign-in; profile has
+  sign out, replay onboarding, reset tips, clear history/cache, measured
+  cache size
   (`getProductCacheSizeBytes` in openfoodfacts.ts — real AsyncStorage bytes,
   never a demo figure), custom maroon/grey toggles (no native Switch).
 - Phase 1 — US/Canada/western, no ads (13 Nov 2026): region in
@@ -226,7 +236,6 @@ Docs: https://docs.expo.dev/eas/index.md
 - Remaining UI fixes (13 Nov): splash bars fixed to fit the logo box
   (BrandedSplash 112px box, bars w*1.5 gap 2 = 88px; native splash.png
   regenerated with white 360x360 box, bars fitted, no orange rules).
-  Login/Forgot use the same compact dismissible SetupNotice as Register;
   Login has icon fields, "Forgot password?" beside the password label, and
   the guest row with INSTANT SCAN badge. Smart Swap is real:
   `src/lib/smartSwap.ts` searches OFF by category (v2 search API, category

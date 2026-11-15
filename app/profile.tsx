@@ -13,12 +13,11 @@ import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'r
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { Session } from '@supabase/supabase-js';
 
 import AdBanner from '../src/components/AdBanner';
 import BottomTabs from '../src/components/BottomTabs';
 import { Card, TextButton, Toast } from '../src/components/ui';
-import { getSession, signOut } from '../src/lib/supabase';
+import { getCurrentUser, signOut, type User } from '../src/lib/firebase';
 import { clearGuest, clearOnboarding, isGuest } from '../src/lib/session';
 import { clearHistory, getHistory } from '../src/lib/history';
 import { clearProductCache, getProductCacheSizeBytes } from '../src/lib/openfoodfacts';
@@ -53,7 +52,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function Profile() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [guest, setGuestState] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [doneMsg, setDoneMsg] = useState('');
@@ -71,7 +70,7 @@ export default function Profile() {
 
   const load = useCallback(() => {
     Promise.all([
-      getSession(),
+      getCurrentUser(),
       isGuest(),
       getHistory(),
       getSelectedAllergens(),
@@ -80,8 +79,8 @@ export default function Profile() {
       getProductCacheSizeBytes(),
       getRegion(),
       getWeeklySummaryEnabled(),
-    ]).then(([s, g, history, selected, torch, tips, cacheBytes, reg, weekly]) => {
-      setSession(s);
+    ]).then(([u, g, history, selected, torch, tips, cacheBytes, reg, weekly]) => {
+      setUser(u);
       setGuestState(g);
       setScanCount(history.length);
       setCleanPct(
@@ -104,12 +103,10 @@ export default function Profile() {
     }, [load]),
   );
 
-  const user = session?.user;
-  const meta = (user?.user_metadata ?? {}) as { full_name?: string };
-  const displayName = meta.full_name || (user?.email ? user.email.split('@')[0] : 'Guest');
+  const displayName = user?.displayName || (user?.email ? user.email.split('@')[0] : 'Guest');
   // Only a real account creation date is shown — never invented.
-  const memberSince = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+  const memberSince = user?.metadata.creationTime
+    ? new Date(user.metadata.creationTime).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
     : null;
 
   const showToast = (msg: string) => {
@@ -259,7 +256,7 @@ export default function Profile() {
           </View>
         </View>
 
-        <Card style={styles.rowCard}>
+        <Card style={[styles.rowCard, { marginBottom: 16 }]}>
           <Pressable
             style={styles.row}
             onPress={() => setRegionExpanded((e) => !e)}
@@ -484,7 +481,7 @@ export default function Profile() {
         </Card>
 
         <View style={styles.signOutWrap}>
-          {session ? (
+          {user ? (
             <Pressable style={styles.signOutButton} onPress={doSignOut}>
               <MaterialIcons name="logout" size={20} color={COLORS.ink} />
               <Text style={styles.signOutText}>Sign Out</Text>
@@ -579,6 +576,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 8,
+    marginBottom: 16,
   },
   statCol: { flex: 1, alignItems: 'center', gap: 2 },
   statDivider: { borderLeftWidth: 1, borderLeftColor: '#D5E0F2' },

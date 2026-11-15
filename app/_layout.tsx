@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { Stack, useSegments, router } from 'expo-router';
-import type { Session } from '@supabase/supabase-js';
 import * as Notifications from 'expo-notifications';
 import {
   useFonts as useJakartaFonts,
@@ -17,7 +16,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import BrandedSplash from '../src/components/BrandedSplash';
-import { getSession, onAuthStateChange } from '../src/lib/supabase';
+import { onAuthStateChange, type User } from '../src/lib/firebase';
 import { hasCompletedOnboarding, isGuest } from '../src/lib/session';
 import { COLORS, FONTS } from '../src/lib/theme';
 
@@ -25,7 +24,7 @@ const AUTH_ROUTES = ['login', 'register', 'forgot-password'];
 
 export default function Layout() {
   const [ready, setReady] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [tick, setTick] = useState(0);
   const segments = useSegments();
 
@@ -54,23 +53,27 @@ export default function Layout() {
     }
   }, []);
 
-  // Boot: load the session, then show the branded splash briefly.
+  // Boot: wait for Firebase Auth to restore the session from storage
+  // (onAuthStateChanged fires immediately with the restored user, or null),
+  // then show the branded splash briefly. Ready is gated on the auth
+  // callback so a signed-in user never flashes the login screen.
   useEffect(() => {
     let alive = true;
-    (async () => {
-      const s = await getSession();
+    let authReady = false;
+    const unsubscribe = onAuthStateChange((u) => {
       if (!alive) return;
-      setSession(s);
-      await new Promise((r) => setTimeout(r, 900));
-      if (alive) setReady(true);
-    })();
-    const { data } = onAuthStateChange((s) => {
-      setSession(s);
+      setUser(u);
       setTick((t) => t + 1);
+      if (!authReady) {
+        authReady = true;
+        setTimeout(() => {
+          if (alive) setReady(true);
+        }, 900);
+      }
     });
     return () => {
       alive = false;
-      data.subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
@@ -84,7 +87,7 @@ export default function Layout() {
       const seg = segments[0];
       const inOnboarding = seg === 'onboarding';
       const inAuth = AUTH_ROUTES.includes(seg as string);
-      const authed = !!session || guest;
+      const authed = !!user || guest;
       if (!onboarded && !inOnboarding) router.replace('/onboarding');
       else if (onboarded && !authed && !inAuth) router.replace('/login');
       else if (onboarded && authed && (inAuth || inOnboarding)) router.replace('/');
@@ -92,7 +95,7 @@ export default function Layout() {
     return () => {
       alive = false;
     };
-  }, [ready, segments, session, tick]);
+  }, [ready, segments, user, tick]);
 
   if (!ready) return <BrandedSplash />;
 
