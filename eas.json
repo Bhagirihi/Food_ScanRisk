@@ -1,0 +1,1 @@
+{"build":{"production":{"android":{"buildType":"app-bundle"},"channel":"production"}},"cli":{"appVersionSource":"local","version":">= 16.0.0"},"submit":{"production":{}}}
