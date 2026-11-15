@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase';
 import { setGuest } from '../src/lib/session';
@@ -49,45 +48,6 @@ export default function Login() {
         return;
       }
       router.replace('/');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  // Apple / Google sign-in via Supabase OAuth. Needs the Supabase project
-  // configured AND 'scanrisk://auth' added as a redirect URL in the
-  // Supabase dashboard; otherwise the buttons show the notice below.
-  const oauth = async (provider: 'apple' | 'google') => {
-    setError('');
-    if (!isSupabaseConfigured || !supabase) {
-      setError('Apple/Google sign-in is not connected yet — use guest mode for now.');
-      return;
-    }
-    setBusy(true);
-    try {
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: 'scanrisk://auth', skipBrowserRedirect: true },
-      });
-      if (oauthError || !data?.url) {
-        setError(oauthError?.message ?? 'Could not start sign-in.');
-        return;
-      }
-      const res = await WebBrowser.openAuthSessionAsync(data.url, 'scanrisk://auth');
-      if (res.type !== 'success' || !res.url) return; // User closed the browser.
-      const code = new URL(res.url).searchParams.get('code');
-      if (!code) {
-        setError('Sign-in did not return a code. Try again.');
-        return;
-      }
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      if (exchangeError) {
-        setError(exchangeError.message);
-        return;
-      }
-      router.replace('/');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign-in failed.');
     } finally {
       setBusy(false);
     }
@@ -153,23 +113,6 @@ export default function Login() {
           />
         </View>
       </Card>
-
-      <View style={styles.divider}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
-        <View style={styles.dividerLine} />
-      </View>
-
-      <View style={styles.socialRow}>
-        <Pressable style={styles.socialButton} onPress={() => oauth('apple')} disabled={busy}>
-          <FontAwesome name="apple" size={22} color={COLORS.ink} />
-          <Text style={styles.socialText}>Apple</Text>
-        </Pressable>
-        <Pressable style={styles.socialButton} onPress={() => oauth('google')} disabled={busy}>
-          <FontAwesome name="google" size={20} color={COLORS.ink} />
-          <Text style={styles.socialText}>Google</Text>
-        </Pressable>
-      </View>
 
       <Pressable style={styles.guestRow} onPress={guest} accessibilityLabel="Continue as guest">
         <View style={styles.guestIconTile}>
@@ -243,23 +186,6 @@ const styles = StyleSheet.create({
   passwordInput: { flex: 1, fontSize: 16, paddingVertical: 12, fontFamily: FONTS.body },
   error: { color: COLORS.danger, fontSize: 13, marginTop: 10, fontFamily: FONTS.body },
   buttonWrap: { marginTop: 18 },
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 18 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.line },
-  dividerText: { fontSize: 11, fontWeight: '800', color: COLORS.soft, letterSpacing: 1.2, fontFamily: FONTS.bodyBold },
-  socialRow: { flexDirection: 'row', gap: 12 },
-  socialButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.card,
-    borderColor: COLORS.line,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingVertical: 13,
-  },
-  socialText: { fontSize: 15, fontWeight: '700', color: COLORS.ink, fontFamily: FONTS.bodySemi },
   guestRow: {
     flexDirection: 'row',
     alignItems: 'center',
