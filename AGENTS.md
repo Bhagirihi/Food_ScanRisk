@@ -165,10 +165,15 @@ Docs: https://docs.expo.dev/eas/index.md
   web-only; the native scanner is used on a real device.
 - History export: per-row CSV via expo-file-system (cache dir) +
   expo-sharing; per-row delete via `removeRecord` in `src/lib/history.ts`.
-- OAuth: Apple/Google via supabase signInWithOAuth + expo-web-browser
-  openAuthSessionAsync + exchangeCodeForSession, redirect
-  `scanrisk://auth` (must be added in the Supabase dashboard); graceful
-  "not connected yet" handling when Supabase is unconfigured.
+- Auth (15 Nov 2026, his instruction): Supabase email/password ONLY —
+  Google/Apple OAuth REMOVED from login.tsx (oauth() fn, social buttons,
+  signInWithOAuth + exchangeCodeForSession + expo-web-browser import all
+  gone; the expo-web-browser package is still installed but unused).
+  Session persists via persistSession + AsyncStorage + autoRefreshToken
+  (src/lib/supabase.ts); _layout restores it on boot and routes signed-in
+  users straight to Home. Sign-in needs his Supabase URL + anon key;
+  until then the SetupNotice banner shows ("Sign-in is not connected
+  yet — guest mode works") and guest mode is what runs.
 - Splash: `expo-splash-screen` config plugin in app.json; art
   `assets/splash.png`, solid maroon #4A121A bg, regenerable via
   `scripts/make-splash.py` (uses Plus Jakarta Sans from node_modules when

@@ -414,9 +414,6 @@ export default function Home() {
             ) : null}
           </Card>
 
-          <Text style={styles.disclaimer}>
-            Guidance score from label data (Open Food Facts). Not medical advice.
-          </Text>
         </ScrollView>
         <BottomTabs active="home" />
       </SafeAreaView>
@@ -642,5 +639,4 @@ const styles = StyleSheet.create({
   bandItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   bandDot: { width: 10, height: 10, borderRadius: 5 },
   bandText: { fontSize: 12, color: COLORS.inkSoft, fontFamily: FONTS.bodySemi },
-  disclaimer: { color: COLORS.soft, fontSize: 12, marginTop: 20, textAlign: 'center', fontFamily: FONTS.body },
 });

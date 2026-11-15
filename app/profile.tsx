@@ -541,7 +541,7 @@ function CustomToggle({ value, onChange }: { value: boolean; onChange: (v: boole
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: 20, paddingBottom: 24 },
+  content: { padding: 20, paddingBottom: 48 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   topBarLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logo: { width: 40, height: 40, borderRadius: 10 },
