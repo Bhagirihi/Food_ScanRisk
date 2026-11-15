@@ -10,7 +10,7 @@ import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 're
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Tour, { type Measurable } from '../src/components/Tour';
 import { hasSeenTip, markTipSeen } from '../src/lib/tips';
@@ -33,6 +33,7 @@ interface TodayItem {
 
 export default function Scan() {
   const [permission, requestPermission] = useCameraPermissions();
+  const insets = useSafeAreaInsets();
   const [scanned, setScanned] = useState(false);
   const [torch, setTorch] = useState(false);
   const [facing, setFacing] = useState<'back' | 'front'>('back');
@@ -112,8 +113,13 @@ export default function Scan() {
     router.replace({ pathname: '/result', params: { barcode: trimmed } });
   };
 
-  const manualSheet = (
-    <View style={styles.sheet}>
+  // bottomPad is the manual sheet's bottom padding: 28 on its own inside
+  // the full-screen permission state (whose SafeAreaView already adds the
+  // bottom inset), insets.bottom + 28 when shown as a root overlay (the
+  // overlay sits outside any SafeAreaView, so the sheet would otherwise be
+  // cut off by the Android navigation bar).
+  const manualSheet = (bottomPad: number) => (
+    <View style={[styles.sheet, { paddingBottom: bottomPad }]}>
       <View style={styles.sheetHeader}>
         <MaterialIcons name="qr-code-scanner" size={18} color={COLORS.maroon} />
         <Text style={styles.sheetTitle}>Enter Barcode</Text>
@@ -149,9 +155,11 @@ export default function Scan() {
   // Permission sheet: the same sheet both when camera access is missing
   // (full-screen state) and when the permissions pill is tapped on the
   // scanner (overlay). Allow Camera is only offered when the system can
-  // still ask — otherwise Open Settings is the way in.
-  const permissionSheet = (showAllow: boolean) => (
-    <View style={styles.permissionSheet}>
+  // still ask — otherwise Open Settings is the way in. bottomPad works
+  // like manualSheet's: 28 inside the full-screen SafeAreaView,
+  // insets.bottom + 28 as a root overlay.
+  const permissionSheet = (showAllow: boolean, bottomPad = 28) => (
+    <View style={[styles.permissionSheet, { paddingBottom: bottomPad }]}>
       <View style={styles.permissionHandle} />
       <View style={styles.permissionIconCircle}>
         <MaterialIcons name="photo-camera" size={28} color={COLORS.maroon} />
@@ -207,7 +215,7 @@ export default function Scan() {
     return (
       <SafeAreaView style={styles.permissionRoot}>
         {permissionSheet(permission.canAskAgain)}
-        {sheet === 'manual' ? <View style={styles.sheetOverlay}>{manualSheet}</View> : null}
+        {sheet === 'manual' ? <View style={styles.sheetOverlay}>{manualSheet(28)}</View> : null}
       </SafeAreaView>
     );
   }
@@ -233,7 +241,7 @@ export default function Scan() {
           onBarcodeScanned={handleScan}
         />
         <View style={styles.dim} pointerEvents="none" />
-        <SafeAreaView style={styles.cardOverlay} pointerEvents="box-none">
+        <View style={[styles.cardOverlay, { paddingTop: insets.top + 10 }]} pointerEvents="box-none">
           <View style={styles.topRow}>
             <Pressable
               style={styles.closeButton}
@@ -317,7 +325,7 @@ export default function Scan() {
               ) : null}
             </View>
           </Pressable>
-        </SafeAreaView>
+        </View>
       </View>
 
       <View style={styles.recentSection}>
@@ -372,9 +380,9 @@ export default function Scan() {
         )}
       </View>
 
-      {sheet === 'manual' ? <View style={styles.sheetOverlay}>{manualSheet}</View> : null}
+      {sheet === 'manual' ? <View style={styles.sheetOverlay}>{manualSheet(insets.bottom + 28)}</View> : null}
       {sheet === 'permission' ? (
-        <View style={styles.sheetOverlay}>{permissionSheet(false)}</View>
+        <View style={styles.sheetOverlay}>{permissionSheet(false, insets.bottom + 28)}</View>
       ) : null}
 
       {showTour ? (
