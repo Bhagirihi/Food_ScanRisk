@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -87,6 +87,34 @@ export default function Home() {
   const containerRef = useRef<Measurable | null>(null);
   const scanRef = useRef<Measurable | null>(null);
   const recentRef = useRef<Measurable | null>(null);
+  // Home Scan card animation: the scanline sweeps inside the viewfinder
+  // (130 tall, the line sits centred — ±45 keeps it inside) and the
+  // barcode icon gently pulses. Both run on the native driver.
+  // useState with lazy initializers keeps one Animated.Value each for the
+  // component's life without touching a ref during render.
+  const [scanlineY] = useState(() => new Animated.Value(0));
+  const [iconPulse] = useState(() => new Animated.Value(1));
+
+  useEffect(() => {
+    const sweep = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanlineY, { toValue: 45, duration: 2500, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(scanlineY, { toValue: -45, duration: 2500, easing: Easing.linear, useNativeDriver: true }),
+      ]),
+    );
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(iconPulse, { toValue: 0.65, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(iconPulse, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    sweep.start();
+    pulse.start();
+    return () => {
+      sweep.stop();
+      pulse.stop();
+    };
+  }, [scanlineY, iconPulse]);
 
   useFocusEffect(
     useCallback(() => {
@@ -261,8 +289,10 @@ export default function Home() {
                 <View style={[styles.corner, styles.cornerBL]} />
                 <View style={[styles.corner, styles.cornerBR]} />
                 <View style={styles.scanIconWrap}>
-                  <MaterialIcons name="qr-code-scanner" size={46} color={COLORS.amber} />
-                  <View style={styles.scanline} />
+                  <Animated.View style={{ opacity: iconPulse }}>
+                    <MaterialIcons name="qr-code-scanner" size={46} color={COLORS.amber} />
+                  </Animated.View>
+                  <Animated.View style={[styles.scanline, { transform: [{ translateY: scanlineY }] }]} />
                 </View>
               </View>
               <View style={styles.scanCardTitleRow}>

@@ -6,7 +6,7 @@
 // permission sheet and the manual-entry sheet are bottom sheets.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Easing, Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -47,6 +47,25 @@ export default function Scan() {
   const containerRef = useRef<Measurable | null>(null);
   const frameRef = useRef<Measurable | null>(null);
   const manualOpened = useRef(false);
+  // The scanline's vertical offset inside the gold frame (frame is 174 tall,
+  // the line sits at 50% — ±75 keeps it inside with a small margin).
+  // useState with a lazy initializer keeps one Animated.Value for the
+  // component's life without touching a ref during render.
+  const [scanlineY] = useState(() => new Animated.Value(0));
+
+  // The scanline sweeps up and down inside the gold frame while the camera
+  // is live — the classic barcode-scanner motion. Native driver (translateY).
+  useEffect(() => {
+    if (!permission?.granted) return;
+    const sweep = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanlineY, { toValue: 75, duration: 1800, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(scanlineY, { toValue: -75, duration: 1800, easing: Easing.linear, useNativeDriver: true }),
+      ]),
+    );
+    sweep.start();
+    return () => sweep.stop();
+  }, [permission?.granted, scanlineY]);
   const params = useLocalSearchParams<{ manual?: string }>();
 
   // Open the manual-entry sheet when arriving from Home's Manual button.
@@ -279,7 +298,7 @@ export default function Scan() {
             <View style={[styles.corner, styles.cornerTR]} />
             <View style={[styles.corner, styles.cornerBL]} />
             <View style={[styles.corner, styles.cornerBR]} />
-            <View style={styles.scanline} />
+            <Animated.View style={[styles.scanline, { transform: [{ translateY: scanlineY }] }]} />
             <MaterialIcons
               name="center-focus-strong"
               size={20}
